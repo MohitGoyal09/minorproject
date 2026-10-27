@@ -1,0 +1,57 @@
+{
+  "invoice_number": "INV-2026-002",
+  "invoice_date": "2026-10-18",
+  "due_date": "2026-10-28",
+  "vendor_name": "CloudGrid Technologies India",
+  "vendor_gstin": "27CCCCCC2222C1Z8",
+  "vendor_address": "BKC, Mumbai, Maharashtra",
+  "buyer_name": "Modern Tech Solutions Pvt Ltd",
+  "buyer_gstin": "07BBBBB1111B1Z2",
+  "subtotal": 12000.0,
+  "total_discount": 0.0,
+  "total_tax": 2160.0,
+  "grand_total": 14160.0,
+  "line_items": [
+    {
+      "description": "Dedicated Cloud Server (Monthly)",
+      "hsn_sac": "998315",
+      "quantity": 1,
+      "unit_price": 12000.0,
+      "discount_amount": 0.0,
+      "tax_rate_percent": 18.0,
+      "total_amount": 12000.0
+    }
+  ],
+  "taxes": [
+    {
+      "tax_type": "IGST",
+      "rate_percent": 18.0,
+      "taxable_amount": 12000.0,
+      "tax_amount": 2160.0
+    }
+  ],
+  "accounting_ground_truth": {
+    "transaction_type": "EXPENSE_OFFICE_CREDIT",
+    "policy_applied": "Inter-state supply: IGST applied. Monthly software/cloud classified as operating expense.",
+    "journal_lines": [
+      {
+        "account_code": "5020",
+        "account_name": "Server & Hosting Expense A/c",
+        "entry_type": "DEBIT",
+        "amount": 12000.0
+      },
+      {
+        "account_code": "1083",
+        "account_name": "Input IGST A/c",
+        "entry_type": "DEBIT",
+        "amount": 2160.0
+      },
+      {
+        "account_code": "2010",
+        "account_name": "CloudGrid Technologies (Creditor)",
+        "entry_type": "CREDIT",
+        "amount": 14160.0
+      }
+    ]
+  }
+}
