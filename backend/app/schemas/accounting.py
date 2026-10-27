@@ -23,6 +23,33 @@ class EntryType(str, Enum):
     CREDIT = "CREDIT"
 
 
+class ValidationCheckStatus(str, Enum):
+    PASS = "PASS"
+    WARNING = "WARNING"
+    FAIL = "FAIL"
+
+
+class ValidationCheckResult(BaseModel):
+    """Detailed result of an individual invariant or accounting check."""
+    check_name: str
+    status: ValidationCheckStatus
+    expected_value: Optional[str] = None
+    actual_value: Optional[str] = None
+    difference: Optional[str] = None
+    explanation: str
+    source_fields: List[str] = Field(default_factory=list)
+    requires_human_review: bool = False
+
+
+class DocumentValidationReport(BaseModel):
+    """Comprehensive validation summary evaluated prior to posting gate."""
+    is_valid: bool = True
+    can_post_automatically: bool = True
+    has_blocking_failures: bool = False
+    checks: List[ValidationCheckResult] = Field(default_factory=list)
+    summary_message: str = "All validation checks passed."
+
+
 class TransactionType(str, Enum):
     PURCHASE_GOODS_CREDIT = "PURCHASE_GOODS_CREDIT"
     PURCHASE_GOODS_CASH = "PURCHASE_GOODS_CASH"
@@ -80,6 +107,10 @@ class ProposedJournalEntry(BaseModel):
     applied_rules: List[str] = Field(default_factory=list, description="IDs/names of rules applied")
     requires_human_review: bool = False
     review_reasons: List[str] = Field(default_factory=list)
+    itc_recoverable: bool = True
+    supplier_gstin: Optional[str] = None
+    place_of_supply: Optional[str] = None
+    validation_report: Optional[DocumentValidationReport] = None
 
     @computed_field
     @property

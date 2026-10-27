@@ -34,7 +34,7 @@ def build_pdf_invoice(filepath: str, data: dict):
     meta_data = [
         [Paragraph(f"<b>Invoice No:</b> {data['invoice_number']}", normal), Paragraph(f"<b>Billed To:</b> {data['buyer_name']}", normal)],
         [Paragraph(f"<b>Invoice Date:</b> {data['invoice_date']}", normal), Paragraph(f"<b>Buyer GSTIN:</b> {data.get('buyer_gstin', 'N/A')}", normal)],
-        [Paragraph(f"<b>Due Date:</b> {data.get('due_date', 'N/A')}", normal), Paragraph(f"<b>Place of Supply:</b> Delhi (07)", normal)],
+        [Paragraph(f"<b>Due Date:</b> {data.get('due_date', 'N/A')}", normal), Paragraph(f"<b>Place of Supply:</b> {data.get('place_of_supply', 'Delhi (07)')}", normal)],
     ]
     meta_table = Table(meta_data, colWidths=[270, 270])
     meta_table.setStyle(TableStyle([
@@ -117,9 +117,10 @@ def generate_seed_data():
             ],
             "accounting_ground_truth": {
                 "transaction_type": "ASSET_ACQUISITION_CREDIT",
-                "policy_applied": "Capitalize equipment/furniture > INR 10,000",
+                "policy_applied": "Capitalize equipment/furniture with unit eligible cost > INR 10,000; expense low-value chairs <= 10,000",
                 "journal_lines": [
-                    {"account_code": "1050", "account_name": "Office Furniture A/c", "entry_type": "DEBIT", "amount": 50000.00},
+                    {"account_code": "1050", "account_name": "Office Furniture & Fixtures", "entry_type": "DEBIT", "amount": 30000.00},
+                    {"account_code": "5010", "account_name": "Office Supplies & Stationery", "entry_type": "DEBIT", "amount": 20000.00},
                     {"account_code": "1081", "account_name": "Input CGST A/c", "entry_type": "DEBIT", "amount": 4500.00},
                     {"account_code": "1082", "account_name": "Input SGST A/c", "entry_type": "DEBIT", "amount": 4500.00},
                     {"account_code": "2010", "account_name": "ABC Furniture Mart (Creditor)", "entry_type": "CREDIT", "amount": 59000.00}
@@ -187,12 +188,54 @@ def generate_seed_data():
                     {"account_code": "2010", "account_name": "Delhi Paper Hub (Creditor)", "entry_type": "CREDIT", "amount": 3920.00}
                 ]
             }
+        },
+        # 4. Multi-Item Invoice with Capitalization Threshold & Intra-state Mixed Slabs (Northstar Office Systems)
+        {
+            "invoice_number": "NOS/26-27/0418",
+            "invoice_date": "2026-10-18",
+            "due_date": "2026-11-17",
+            "vendor_name": "NORTHSTAR OFFICE SYSTEMS",
+            "vendor_gstin": "09AABCN4821K1Z6",
+            "vendor_address": "Sector 62, Noida, Uttar Pradesh",
+            "buyer_name": "Modern Tech Solutions Private Limited",
+            "buyer_gstin": "09AAFCM7314R1Z2",
+            "place_of_supply": "Uttar Pradesh (09)",
+            "subtotal": 44750.00,
+            "total_discount": 2800.00,
+            "total_tax": 7680.00,
+            "grand_total": 52430.00,
+            "line_items": [
+                {"description": "Executive ergonomic chair", "hsn_sac": "9401", "quantity": 3, "unit_price": 6200.00, "discount_amount": 1860.00, "tax_rate_percent": 18.0, "total_amount": 16740.00},
+                {"description": "USB-C docking station, 12-in-1", "hsn_sac": "8471", "quantity": 2, "unit_price": 8500.00, "discount_amount": 850.00, "tax_rate_percent": 18.0, "total_amount": 16150.00},
+                {"description": "A4 copier paper, 5-ream carton", "hsn_sac": "4802", "quantity": 5, "unit_price": 1250.00, "discount_amount": 0.00, "tax_rate_percent": 12.0, "total_amount": 6250.00},
+                {"description": "Braided USB-C cable, 2 m", "hsn_sac": "8544", "quantity": 10, "unit_price": 450.00, "discount_amount": 90.00, "tax_rate_percent": 18.0, "total_amount": 4410.00},
+                {"description": "Freight & handling", "hsn_sac": "9965", "quantity": 1, "unit_price": 1200.00, "discount_amount": 0.00, "tax_rate_percent": 18.0, "total_amount": 1200.00}
+            ],
+            "taxes": [
+                {"tax_type": "CGST", "rate_percent": 9.0, "taxable_amount": 38500.00, "tax_amount": 3465.00},
+                {"tax_type": "SGST", "rate_percent": 9.0, "taxable_amount": 38500.00, "tax_amount": 3465.00},
+                {"tax_type": "CGST", "rate_percent": 6.0, "taxable_amount": 6250.00, "tax_amount": 375.00},
+                {"tax_type": "SGST", "rate_percent": 6.0, "taxable_amount": 6250.00, "tax_amount": 375.00}
+            ],
+            "accounting_ground_truth": {
+                "transaction_type": "EXPENSE_OFFICE_CREDIT",
+                "policy_applied": "Chairs unit cost 5,580 <= 10k expensed under 5010; Docking station unit cost 8,075 <= 10k expensed under 5060; Cables under 5060; Freight under 5050; Intra-state UP-UP CGST+SGST.",
+                "journal_lines": [
+                    {"account_code": "5010", "account_name": "Office Supplies & Stationery", "entry_type": "DEBIT", "amount": 22990.00},
+                    {"account_code": "5060", "account_name": "Computer Accessories & Peripherals Expense", "entry_type": "DEBIT", "amount": 20560.00},
+                    {"account_code": "5050", "account_name": "Freight, Shipping & Cartage Expense", "entry_type": "DEBIT", "amount": 1200.00},
+                    {"account_code": "1081", "account_name": "Input CGST A/c", "entry_type": "DEBIT", "amount": 3840.00},
+                    {"account_code": "1082", "account_name": "Input SGST A/c", "entry_type": "DEBIT", "amount": 3840.00},
+                    {"account_code": "2010", "account_name": "Accounts Payable (Creditors)", "entry_type": "CREDIT", "amount": 52430.00}
+                ]
+            }
         }
     ]
 
     for inv in invoices:
-        pdf_path = os.path.join(INVOICES_DIR, f"{inv['invoice_number']}.pdf")
-        json_path = os.path.join(GROUND_TRUTH_DIR, f"{inv['invoice_number']}.json")
+        clean_name = inv['invoice_number'].replace('/', '-')
+        pdf_path = os.path.join(INVOICES_DIR, f"{clean_name}.pdf")
+        json_path = os.path.join(GROUND_TRUTH_DIR, f"{clean_name}.json")
 
         # Build PDF
         build_pdf_invoice(pdf_path, inv)

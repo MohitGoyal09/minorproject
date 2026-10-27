@@ -1,6 +1,6 @@
 from decimal import Decimal
 from datetime import date, datetime, timezone
-from typing import List, Dict
+from typing import List, Dict, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -17,12 +17,15 @@ from app.schemas.accounting import (
     EntryType,
     AccountCategory,
     NormalBalance,
+    ValidationCheckStatus,
 )
 from app.schemas.reports import LedgerAccountBalance, TrialBalanceReport
 from app.engine.invariants import (
     validate_double_entry_invariants,
     validate_chart_of_accounts,
+    validate_journal_invariants_detailed,
     InvariantViolation,
+    DuplicateInvoiceViolation,
 )
 
 
@@ -30,65 +33,98 @@ def post_journal_entry(
     db: Session,
     tenant_id: str,
     proposal: ProposedJournalEntry,
-    posted_by: str = "SYSTEM_AUTOMATION"
+    posted_by: str = "SYSTEM_AUTOMATION",
+    allow_review_override: bool = False
 ) -> JournalEntry:
     """
     Atomically posts a validated journal entry into the authoritative ledger.
-    Ensures all double-entry invariants are satisfied before writing to disk.
+    Enforces:
+    1. Duplicate invoice posting prevention.
+    2. Zero tolerance for double-entry imbalance.
+    3. All referenced accounts exist and are active in the tenant's Chart of Accounts.
+    4. Non-negative amounts.
+    5. Human approval verification if review is required.
     """
-    # 1. Check double entry invariants
-    is_valid, errors = validate_double_entry_invariants(proposal)
-    if not is_valid:
-        raise InvariantViolation(f"Cannot post unbalanced or invalid entry: {'; '.join(errors)}")
+    # 1. Duplicate Invoice Posting Prevention
+    existing_entry = (
+        db.query(JournalEntry)
+        .filter(
+            JournalEntry.tenant_id == tenant_id,
+            JournalEntry.invoice_number == proposal.invoice_number,
+            JournalEntry.status == EntryPostingStatus.POSTED
+        )
+        .first()
+    )
+    if existing_entry:
+        raise DuplicateInvoiceViolation(
+            f"Duplicate Posting Blocked: Invoice #{proposal.invoice_number} has already been posted to the ledger (Entry ID: {existing_entry.id})."
+        )
 
-    # 2. Check Chart of Accounts existence
+    # 2. Detailed Journal Invariants & COA Checks
     tenant_accounts = db.query(Account).filter(Account.tenant_id == tenant_id, Account.is_active == True).all()
     account_code_map = {acc.code: acc for acc in tenant_accounts}
+    active_codes = set(account_code_map.keys())
 
-    coa_valid, coa_errors = validate_chart_of_accounts(proposal, set(account_code_map.keys()))
-    if not coa_valid:
-        raise InvariantViolation(f"Account validation failed: {'; '.join(coa_errors)}")
-
-    # 3. Create persistent JournalEntry record
-    db_entry = JournalEntry(
-        tenant_id=tenant_id,
-        document_id=proposal.source_document_id if proposal.source_document_id != "doc_001" else None,
-        invoice_number=proposal.invoice_number,
-        entry_date=proposal.entry_date,
-        transaction_type=proposal.transaction_type,
-        narration=proposal.narration,
-        status=EntryPostingStatus.POSTED,
-        posted_at=datetime.now(timezone.utc)
+    checks = validate_journal_invariants_detailed(
+        entry=proposal,
+        active_account_codes=active_codes
     )
-    db.add(db_entry)
-    db.flush()  # Populates db_entry.id
 
-    # 4. Create persistent JournalLine records
-    for line in proposal.lines:
-        acc = account_code_map[line.account_code]
-        db_line = JournalLine(
-            entry_id=db_entry.id,
-            account_id=acc.id,
-            entry_type=line.entry_type,
-            amount=line.amount,
-            description=line.description or line.account_name
+    failures = [c.explanation for c in checks if c.status == ValidationCheckStatus.FAIL]
+    if failures:
+        raise InvariantViolation(f"Cannot post invalid journal entry: {'; '.join(failures)}")
+
+    # 3. Human Approval Gate
+    # If the proposal was flagged for review (e.g. ambiguous classification, warnings),
+    # an automated system cannot post it without explicit human approval.
+    if proposal.requires_human_review and posted_by == "SYSTEM_AUTOMATION" and not allow_review_override:
+        raise InvariantViolation(
+            f"Posting Gate Blocked: Entry for invoice #{proposal.invoice_number} requires human review: {'; '.join(proposal.review_reasons)}"
         )
-        db.add(db_line)
 
-    # 5. Log audit trail
-    audit_record = AuditLog(
-        tenant_id=tenant_id,
-        entity_name="JournalEntry",
-        entity_id=db_entry.id,
-        action="POST",
-        performed_by=posted_by,
-        details=f"Posted entry for invoice {proposal.invoice_number}. Total: INR {proposal.total_debits}"
-    )
-    db.add(audit_record)
+    # 4. Atomic Database Transaction: Post Entry and Lines
+    try:
+        db_entry = JournalEntry(
+            tenant_id=tenant_id,
+            document_id=proposal.source_document_id if proposal.source_document_id and proposal.source_document_id != "doc_simulated" else None,
+            invoice_number=proposal.invoice_number,
+            entry_date=proposal.entry_date,
+            transaction_type=proposal.transaction_type,
+            narration=proposal.narration,
+            status=EntryPostingStatus.POSTED,
+            posted_at=datetime.now(timezone.utc)
+        )
+        db.add(db_entry)
+        db.flush()  # Generates db_entry.id
 
-    db.commit()
-    db.refresh(db_entry)
-    return db_entry
+        for line in proposal.lines:
+            acc = account_code_map[line.account_code]
+            db_line = JournalLine(
+                entry_id=db_entry.id,
+                account_id=acc.id,
+                entry_type=line.entry_type,
+                amount=line.amount,
+                description=line.description or line.account_name
+            )
+            db.add(db_line)
+
+        # Audit trail recording
+        audit_record = AuditLog(
+            tenant_id=tenant_id,
+            entity_name="JournalEntry",
+            entity_id=db_entry.id,
+            action="POST",
+            performed_by=posted_by,
+            details=f"Posted entry for invoice #{proposal.invoice_number}. Total Debits/Credits: INR {proposal.total_debits}"
+        )
+        db.add(audit_record)
+
+        db.commit()
+        db.refresh(db_entry)
+        return db_entry
+    except Exception as e:
+        db.rollback()
+        raise e
 
 
 def generate_trial_balance(db: Session, tenant_id: str, as_of_date: date) -> TrialBalanceReport:
@@ -111,7 +147,6 @@ def generate_trial_balance(db: Session, tenant_id: str, as_of_date: date) -> Tri
         .all()
     )
 
-    # Aggregate debits and credits per account
     balances: Dict[str, Dict[str, Decimal]] = {
         acc_id: {"debit": Decimal("0.00"), "credit": Decimal("0.00")} for acc_id in account_map
     }
@@ -122,18 +157,15 @@ def generate_trial_balance(db: Session, tenant_id: str, as_of_date: date) -> Tri
         else:
             balances[line.account_id]["credit"] += Decimal(str(line.amount))
 
-    # Build Trial Balance rows
     tb_rows: List[LedgerAccountBalance] = []
     for acc_id, totals in balances.items():
         acc = account_map[acc_id]
         tot_dr = totals["debit"].quantize(Decimal("0.01"))
         tot_cr = totals["credit"].quantize(Decimal("0.01"))
 
-        # If no activity in account, skip
         if tot_dr == Decimal("0.00") and tot_cr == Decimal("0.00"):
             continue
 
-        # Normal balance net calculation
         if acc.normal_balance == NormalBalance.DEBIT:
             net_balance = (tot_dr - tot_cr).quantize(Decimal("0.01"))
             balance_type = "DEBIT" if net_balance >= Decimal("0.00") else "CREDIT"
@@ -155,6 +187,5 @@ def generate_trial_balance(db: Session, tenant_id: str, as_of_date: date) -> Tri
             )
         )
 
-    # Sort rows by account code
     tb_rows.sort(key=lambda x: x.account_code)
     return TrialBalanceReport.from_rows(as_of_date=as_of_date, rows=tb_rows)

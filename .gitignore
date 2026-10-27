@@ -45,9 +45,12 @@ yarn-error.log*
 *.swp
 *.swo
 
-# OS
-Thumbs.db
-ehthumbs.db
+# SQLite Database
+*.db
+*.sqlite3
+
+# Uploaded runtime invoices
+data/sample_invoices/*_*
 Desktop.ini
 $RECYCLE.BIN/
 .DS_Store

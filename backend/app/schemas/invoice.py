@@ -36,6 +36,11 @@ class InvoiceLineItem(BaseModel):
             return Decimal(str(v)).quantize(Decimal("0.01"))
         return v
 
+    @property
+    def discount(self) -> Decimal:
+        """Convenience alias for discount_amount."""
+        return self.discount_amount
+
 
 class TaxBreakdown(BaseModel):
     """Detailed tax component breakdown (e.g. CGST, SGST, IGST)."""
@@ -68,12 +73,18 @@ class ExtractedInvoice(BaseModel):
     buyer_name: Optional[str] = Field(default=None, description="Name of the buyer/customer")
     buyer_gstin: Optional[str] = Field(default=None, description="GSTIN of buyer")
 
+    place_of_supply: Optional[str] = Field(default=None, description="Place of Supply state or code, e.g. 'Uttar Pradesh (09)'")
+    place_of_supply_state_code: Optional[str] = Field(default=None, description="2-digit state code of POS, e.g. '09'")
+    payment_terms: Optional[str] = Field(default=None, description="e.g. '30 days from invoice date', 'Paid via Cash'")
+    is_settled_or_paid: bool = Field(default=False, description="True if marked cash paid or settled")
+
     currency: str = Field(default="INR", description="ISO Currency code (INR, USD, EUR)")
     
     # Financial Totals (Strict Decimal)
     subtotal: Decimal = Field(..., description="Sum of taxable line items before tax")
     total_discount: Decimal = Field(default=Decimal("0.00"), description="Document-level discount")
     total_tax: Decimal = Field(default=Decimal("0.00"), description="Total tax amount")
+    round_off: Decimal = Field(default=Decimal("0.00"), description="Round-off adjustment")
     grand_total: Decimal = Field(..., description="Final invoice payable amount")
 
     # Line items & taxes
@@ -84,7 +95,7 @@ class ExtractedInvoice(BaseModel):
     confidence: ExtractionConfidence = Field(default=ExtractionConfidence.MEDIUM)
     validation_flags: List[str] = Field(default_factory=list, description="Warnings or issues detected by heuristics")
 
-    @field_validator("subtotal", "total_discount", "total_tax", "grand_total", mode="before")
+    @field_validator("subtotal", "total_discount", "total_tax", "round_off", "grand_total", mode="before")
     @classmethod
     def parse_to_decimal(cls, v):
         if v is None:

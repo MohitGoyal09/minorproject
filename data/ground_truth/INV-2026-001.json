@@ -47,13 +47,19 @@
   ],
   "accounting_ground_truth": {
     "transaction_type": "ASSET_ACQUISITION_CREDIT",
-    "policy_applied": "Capitalize equipment/furniture > INR 10,000",
+    "policy_applied": "Capitalize equipment/furniture with unit eligible cost > INR 10,000; expense low-value chairs <= 10,000",
     "journal_lines": [
       {
         "account_code": "1050",
-        "account_name": "Office Furniture A/c",
+        "account_name": "Office Furniture & Fixtures",
         "entry_type": "DEBIT",
-        "amount": 50000.0
+        "amount": 30000.0
+      },
+      {
+        "account_code": "5010",
+        "account_name": "Office Supplies & Stationery",
+        "entry_type": "DEBIT",
+        "amount": 20000.0
       },
       {
         "account_code": "1081",

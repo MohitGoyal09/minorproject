@@ -25,6 +25,7 @@ from app.db.seed_accounts import seed_standard_accounts
 from app.schemas.accounting import ProposedJournalEntry, ProposedJournalLine, EntryType
 from app.engine.ingestion import DocumentIngestionService
 from app.engine.interpreter import AccountingInterpreter
+from app.engine.invariants import run_comprehensive_validation
 from app.engine.ledger import post_journal_entry, generate_trial_balance
 from app.engine.statements import FinancialStatementService
 
@@ -202,13 +203,23 @@ def process_document(doc_id: str, db: Session = Depends(get_db)):
         creditor_account_code="2010"
     )
 
-    doc.status = DocumentStatus.REVIEW_REQUIRED if proposal.requires_human_review else DocumentStatus.PROCESSED
+    # 4. Run Multi-Stage Deterministic Validation Suite
+    active_codes = {acc.code for acc in db.query(Account).filter(Account.tenant_id == tenant.id, Account.is_active == True).all()}
+    validation_report = run_comprehensive_validation(
+        invoice=extracted,
+        entry=proposal,
+        active_account_codes=active_codes
+    )
+    proposal.validation_report = validation_report
+
+    doc.status = DocumentStatus.REVIEW_REQUIRED if (validation_report.has_blocking_failures or not validation_report.can_post_automatically) else DocumentStatus.PROCESSED
     db.commit()
 
     return {
         "status": doc.status,
         "extracted_invoice": extracted.model_dump(),
-        "proposed_journal_entry": proposal.model_dump()
+        "proposed_journal_entry": proposal.model_dump(),
+        "validation_report": validation_report.model_dump()
     }
 
 
@@ -251,17 +262,26 @@ def get_document_details(doc_id: str, db: Session = Depends(get_db)):
             "line_items": line_items_data
         }
 
-        # Re-generate proposal on the fly for review
+        # Re-generate proposal and validation report on the fly for review
         extracted_obj = DocumentIngestionService.process_pdf_invoice(doc.file_path)
         proposal = AccountingInterpreter.interpret_invoice(extracted_obj, document_id=doc.id)
+        active_codes = {acc.code for acc in db.query(Account).filter(Account.tenant_id == tenant.id, Account.is_active == True).all()}
+        validation_report = run_comprehensive_validation(
+            invoice=extracted_obj,
+            entry=proposal,
+            active_account_codes=active_codes
+        )
+        proposal.validation_report = validation_report
         proposal_data = proposal.model_dump()
+        validation_data = validation_report.model_dump()
 
     return {
         "id": doc.id,
         "filename": doc.filename,
         "status": doc.status,
         "invoice": inv_data,
-        "proposal": proposal_data
+        "proposal": proposal_data,
+        "validation_report": validation_data if inv else None
     }
 
 
@@ -269,7 +289,7 @@ def get_document_details(doc_id: str, db: Session = Depends(get_db)):
 def post_entry(proposal: ProposedJournalEntry, db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     try:
-        posted = post_journal_entry(db, tenant.id, proposal, posted_by="USER_REVIEWER")
+        posted = post_journal_entry(db, tenant.id, proposal, posted_by="USER_REVIEWER", allow_review_override=True)
         
         # Update linked document status
         if proposal.source_document_id:

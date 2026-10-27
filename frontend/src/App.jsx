@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   FileText, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, 
   BookOpen, Scale, PieChart, History, Upload, RefreshCw, Sparkles,
-  ArrowUpRight, ArrowDownLeft, FileCheck, Layers, Landmark
+  ArrowUpRight, ArrowDownLeft, FileCheck, Layers, Landmark, XCircle, Info, ShieldAlert
 } from 'lucide-react';
 
 export default function App() {
@@ -533,6 +533,90 @@ export default function App() {
                             ))}
                           </ul>
                         </div>
+
+                        {/* Deterministic Invariant & Compliance Gate Report */}
+                        {selectedDoc.validation_report && (
+                          <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                                <span className="font-semibold text-slate-200 text-xs">Multi-Stage Invariant Verification</span>
+                              </div>
+                              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+                                selectedDoc.validation_report.has_blocking_failures 
+                                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' 
+                                  : selectedDoc.proposal?.requires_human_review 
+                                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' 
+                                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                              }`}>
+                                {selectedDoc.validation_report.has_blocking_failures 
+                                  ? 'POSTING BLOCKED' 
+                                  : selectedDoc.proposal?.requires_human_review 
+                                    ? 'HUMAN REVIEW REQUIRED' 
+                                    : 'GATE PASSED (AUTO-POSTABLE)'}
+                              </span>
+                            </div>
+
+                            <p className="text-[11px] text-slate-400">
+                              {selectedDoc.validation_report.summary_message}
+                            </p>
+
+                            {/* Review Reasons Callout */}
+                            {selectedDoc.proposal?.requires_human_review && selectedDoc.proposal.review_reasons?.length > 0 && (
+                              <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-[11px] space-y-1">
+                                <div className="font-bold flex items-center space-x-1.5">
+                                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Accountant Attention Points:</span>
+                                </div>
+                                <ul className="list-disc list-inside space-y-0.5 text-amber-200/90 pl-1">
+                                  {selectedDoc.proposal.review_reasons.map((r, i) => (
+                                    <li key={i}>{r}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Detailed Invariant Checks */}
+                            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                              {selectedDoc.validation_report.checks?.map((check, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className={`p-2 rounded-lg text-[11px] border flex flex-col space-y-1 ${
+                                    check.status === 'FAIL' 
+                                      ? 'bg-rose-950/20 border-rose-900/40 text-rose-300' 
+                                      : check.status === 'WARNING' 
+                                        ? 'bg-amber-950/20 border-amber-900/40 text-amber-300' 
+                                        : 'bg-slate-900/50 border-slate-800 text-slate-300'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-1.5 font-medium">
+                                      {check.status === 'FAIL' ? (
+                                        <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                      ) : check.status === 'WARNING' ? (
+                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                      ) : (
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                      )}
+                                      <span>{check.check_name}</span>
+                                    </div>
+                                    <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded font-bold">
+                                      {check.status}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-slate-400 pl-5">
+                                    {check.explanation}
+                                  </p>
+                                  {check.difference && (
+                                    <div className="pl-5 text-[10px] font-mono text-rose-400">
+                                      Discrepancy: ₹{check.difference} (Expected: {check.expected_value}, Actual: {check.actual_value})
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Approval Action */}
@@ -542,6 +626,20 @@ export default function App() {
                             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                             <span>This entry has been approved and permanently posted to the General Ledger.</span>
                           </div>
+                        ) : selectedDoc.validation_report?.has_blocking_failures ? (
+                          <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs font-semibold flex items-center justify-center space-x-2">
+                            <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                            <span>Posting Blocked: Critical accounting or arithmetic invariants violated.</span>
+                          </div>
+                        ) : selectedDoc.proposal?.requires_human_review ? (
+                          <button
+                            onClick={handlePostEntry}
+                            disabled={loading}
+                            className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-600/20 transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.99]"
+                          >
+                            <AlertTriangle className="w-4 h-4" />
+                            <span>{loading ? 'Posting...' : 'Review & Approve (Override Verification Gate)'}</span>
+                          </button>
                         ) : (
                           <button
                             onClick={handlePostEntry}

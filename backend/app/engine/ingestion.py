@@ -37,6 +37,17 @@ class DocumentIngestionService:
         gstins = HeuristicExtractor.extract_gstin_tags(raw_markdown)
         vendor, buyer = HeuristicExtractor.extract_entity_names(raw_markdown)
 
+        # Place of supply extraction
+        pos = None
+        pos_code = None
+        import re
+        pos_match = re.search(r"Place of Supply:\*?\*?\s*([^\n\|]+)", raw_markdown, re.IGNORECASE)
+        if pos_match:
+            pos = pos_match.group(1).replace("*", "").strip()
+            code_match = re.search(r"\((\d{2})\)|\b(\d{2})\b", pos)
+            if code_match:
+                pos_code = code_match.group(1) or code_match.group(2)
+
         # 4. Resolve Totals
         subtotal = trapped_totals.get("subtotal")
         total_tax = trapped_totals.get("total_tax", Decimal("0.00"))
@@ -59,6 +70,8 @@ class DocumentIngestionService:
             vendor_gstin=gstins.get("vendor_gstin"),
             buyer_name=buyer,
             buyer_gstin=gstins.get("buyer_gstin"),
+            place_of_supply=pos,
+            place_of_supply_state_code=pos_code,
             subtotal=subtotal,
             total_tax=total_tax,
             total_discount=total_discount,

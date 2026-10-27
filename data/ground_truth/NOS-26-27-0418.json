@@ -1,0 +1,130 @@
+{
+  "invoice_number": "NOS/26-27/0418",
+  "invoice_date": "2026-10-18",
+  "due_date": "2026-11-17",
+  "vendor_name": "NORTHSTAR OFFICE SYSTEMS",
+  "vendor_gstin": "09AABCN4821K1Z6",
+  "vendor_address": "Sector 62, Noida, Uttar Pradesh",
+  "buyer_name": "Modern Tech Solutions Private Limited",
+  "buyer_gstin": "09AAFCM7314R1Z2",
+  "place_of_supply": "Uttar Pradesh (09)",
+  "subtotal": 44750.0,
+  "total_discount": 2800.0,
+  "total_tax": 7680.0,
+  "grand_total": 52430.0,
+  "line_items": [
+    {
+      "description": "Executive ergonomic chair",
+      "hsn_sac": "9401",
+      "quantity": 3,
+      "unit_price": 6200.0,
+      "discount_amount": 1860.0,
+      "tax_rate_percent": 18.0,
+      "total_amount": 16740.0
+    },
+    {
+      "description": "USB-C docking station, 12-in-1",
+      "hsn_sac": "8471",
+      "quantity": 2,
+      "unit_price": 8500.0,
+      "discount_amount": 850.0,
+      "tax_rate_percent": 18.0,
+      "total_amount": 16150.0
+    },
+    {
+      "description": "A4 copier paper, 5-ream carton",
+      "hsn_sac": "4802",
+      "quantity": 5,
+      "unit_price": 1250.0,
+      "discount_amount": 0.0,
+      "tax_rate_percent": 12.0,
+      "total_amount": 6250.0
+    },
+    {
+      "description": "Braided USB-C cable, 2 m",
+      "hsn_sac": "8544",
+      "quantity": 10,
+      "unit_price": 450.0,
+      "discount_amount": 90.0,
+      "tax_rate_percent": 18.0,
+      "total_amount": 4410.0
+    },
+    {
+      "description": "Freight & handling",
+      "hsn_sac": "9965",
+      "quantity": 1,
+      "unit_price": 1200.0,
+      "discount_amount": 0.0,
+      "tax_rate_percent": 18.0,
+      "total_amount": 1200.0
+    }
+  ],
+  "taxes": [
+    {
+      "tax_type": "CGST",
+      "rate_percent": 9.0,
+      "taxable_amount": 38500.0,
+      "tax_amount": 3465.0
+    },
+    {
+      "tax_type": "SGST",
+      "rate_percent": 9.0,
+      "taxable_amount": 38500.0,
+      "tax_amount": 3465.0
+    },
+    {
+      "tax_type": "CGST",
+      "rate_percent": 6.0,
+      "taxable_amount": 6250.0,
+      "tax_amount": 375.0
+    },
+    {
+      "tax_type": "SGST",
+      "rate_percent": 6.0,
+      "taxable_amount": 6250.0,
+      "tax_amount": 375.0
+    }
+  ],
+  "accounting_ground_truth": {
+    "transaction_type": "EXPENSE_OFFICE_CREDIT",
+    "policy_applied": "Chairs unit cost 5,580 <= 10k expensed under 5010; Docking station unit cost 8,075 <= 10k expensed under 5060; Cables under 5060; Freight under 5050; Intra-state UP-UP CGST+SGST.",
+    "journal_lines": [
+      {
+        "account_code": "5010",
+        "account_name": "Office Supplies & Stationery",
+        "entry_type": "DEBIT",
+        "amount": 22990.0
+      },
+      {
+        "account_code": "5060",
+        "account_name": "Computer Accessories & Peripherals Expense",
+        "entry_type": "DEBIT",
+        "amount": 20560.0
+      },
+      {
+        "account_code": "5050",
+        "account_name": "Freight, Shipping & Cartage Expense",
+        "entry_type": "DEBIT",
+        "amount": 1200.0
+      },
+      {
+        "account_code": "1081",
+        "account_name": "Input CGST A/c",
+        "entry_type": "DEBIT",
+        "amount": 3840.0
+      },
+      {
+        "account_code": "1082",
+        "account_name": "Input SGST A/c",
+        "entry_type": "DEBIT",
+        "amount": 3840.0
+      },
+      {
+        "account_code": "2010",
+        "account_name": "Accounts Payable (Creditors)",
+        "entry_type": "CREDIT",
+        "amount": 52430.0
+      }
+    ]
+  }
+}

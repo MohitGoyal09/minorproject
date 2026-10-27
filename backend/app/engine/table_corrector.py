@@ -16,9 +16,12 @@ class TableLayoutCorrector:
 
     SUMMARY_KEYWORDS = [
         "subtotal", "sub total", "sub-total",
-        "total tax", "gst", "cgst", "sgst", "igst", "vat",
+        "total tax", "cgst", "sgst", "igst",
         "grand total", "total amount", "net payable", "balance due",
         "total discount", "round off"
+    ]
+    COMPRESSED_SUMMARY_KEYWORDS = [
+        "subtotal", "totaltax", "grandtotal", "totalamount", "totaldiscount", "netpayable", "balancedue", "roundoff"
     ]
 
     @staticmethod
@@ -44,13 +47,19 @@ class TableLayoutCorrector:
     @classmethod
     def is_summary_row(cls, row_cells: List[str]) -> bool:
         row_text = " ".join(row_cells).lower()
-        return any(keyword in row_text for keyword in cls.SUMMARY_KEYWORDS)
+        for kw in cls.SUMMARY_KEYWORDS:
+            if re.search(r"\b" + re.escape(kw) + r"\b", row_text):
+                return True
+        # Check compressed text for multi-word summary terms split across markdown cells
+        compressed = re.sub(r"[\s\*\_\-]+", "", row_text)
+        return any(ckw in compressed for ckw in cls.COMPRESSED_SUMMARY_KEYWORDS)
 
     @classmethod
     def extract_summary_totals(cls, rows: List[List[str]]) -> Dict[str, Decimal]:
         totals: Dict[str, Decimal] = {}
         for row in rows:
             row_str = " ".join(row).lower()
+            row_comp = re.sub(r"[\s\*\_\-]+", "", row_str)
             amt = None
             for cell in reversed(row):
                 found = cls.extract_monetary_amount(cell)
@@ -59,13 +68,13 @@ class TableLayoutCorrector:
                     break
 
             if amt is not None:
-                if "subtotal" in row_str or "sub total" in row_str:
+                if "subtotal" in row_comp or "subtotal" in row_str:
                     totals["subtotal"] = amt
-                elif "total tax" in row_str or "tax" in row_str or "gst" in row_str:
+                elif "totaltax" in row_comp or "totaltax" in row_str or "gst" in row_comp:
                     totals["total_tax"] = amt
-                elif "discount" in row_str:
+                elif "discount" in row_comp or "discount" in row_str:
                     totals["total_discount"] = amt
-                elif "grand total" in row_str:
+                elif "grandtotal" in row_comp or "grandtotal" in row_str:
                     totals["grand_total"] = amt
 
         return totals
@@ -96,9 +105,11 @@ class TableLayoutCorrector:
             if cls.is_summary_row(row):
                 summary_rows.append(row)
             else:
-                first_non_empty = next((c for c in row if c), "")
-                if first_non_empty and not any(kw in first_non_empty.lower() for kw in cls.SUMMARY_KEYWORDS):
+                desc = row[0].replace("**", "").replace("*", "").strip() if len(row) > 0 else ""
+                if desc and len(desc) >= 2 and not cls.is_summary_row([desc]):
                     item_rows.append(row)
+                else:
+                    summary_rows.append(row)
 
         extracted_totals = cls.extract_summary_totals(summary_rows)
 
