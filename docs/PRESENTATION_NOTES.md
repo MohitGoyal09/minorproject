@@ -5,6 +5,7 @@
 **Authors:** Anand Misra (04011502723), Pratham Nahata (05611502723)  
 **Supervisor:** Dr. Jolly Parikh (Assistant Professor)  
 **Academic Cycle:** September – December 2026  
+**System Live URL:** `http://localhost:5173` | **API Swagger Docs:** `http://127.0.0.1:8000/docs`
 
 ---
 
@@ -52,31 +53,18 @@
   * E5: Full Pipeline with Accounting Interpretation.
   * E6: Complete End-to-End System with Deterministic Invariants & Human Review.
 
-### Slide 6: Comparative Evaluation Metrics
-| Metric Category | Metrics Used | Compared Against |
-|---|---|---|
-| **Field Extraction** | Field Exact Match (EM), Precision, Recall, F1 | Rana et al. (2025) baseline |
-| **Table Structure** | Tree-Edit-Distance-based Similarity (TEDS) | Yao et al. (2026) baseline |
-| **Validation Reliability** | Arithmetic Error Detection Rate, Hallucination Catch Rate | Raw VLM without heuristics |
-| **Accounting Precision** | Account Mapping Accuracy, Debit/Credit Correctness, Journal EM | Standard manual posting |
-| **Operational Impact** | Processing Latency, Human-in-the-Loop Review Percentage | Traditional manual data entry |
+### Slide 6: Live Fullstack Demonstration
+1. **Invoice Upload & Ingestion Screen:** User uploads PDF invoices (`INV-2026-001`, `INV-2026-002`, `INV-2026-003`).
+2. **Side-by-Side Reviewer:** Shows extracted metadata, cleaned tables, and AI journal entry proposal side by side.
+3. **Double-Entry Invariant Guard:** Real-time badge proving $\sum \text{Debits} == \sum \text{Credits} == \text{Grand Total}$.
+4. **General Ledger Posting:** Atomically posts approved entry into SQLite/PostgreSQL ledger.
+5. **Dynamic Trial Balance:** Real-time generation confirming debit and credit balance equality with 0 float drift.
+6. **Financial Statements:** Live generated Profit & Loss Account and Balance Sheet.
+7. **Compliance Audit Trail:** Displays immutable logbook of all document ingestions and user approvals.
 
-### Slide 7: Live Demonstration Walkthrough (The Golden Case)
-* **Input Document:** Fictional invoice from *ABC Furniture Mart* (₹50,000 furniture + ₹9,000 GST = ₹59,000).
-* **System Processing:**
-  1. OCR/VLM extracts fields & tabular line items.
-  2. Table correction aligns 2 line items and checks `50,000 + 9,000 == 59,000`.
-  3. Engine identifies asset capitalization policy: Office Furniture A/c (Debit ₹50,000), Input GST A/c (Debit ₹9,000), ABC Furniture Mart (Credit ₹59,000).
-  4. Invariant validator confirms exact decimal equality (`59,000.00 Dr == 59,000.00 Cr`).
-  5. User approves in dashboard; ledger updates; Trial Balance balances instantaneously.
-
-### Slide 8: Technology Stack & Engineering Rigor
-* **Backend:** Python 3.11, FastAPI, Pydantic v2 (strict typed schemas), SQLAlchemy 2.0.
+### Slide 7: Technology Stack & Engineering Rigor
+* **Backend:** Python 3.13, FastAPI, Pydantic v2 (strict typed schemas with computed fields), SQLAlchemy 2.0.
 * **Financial Integrity:** Exact `Decimal` arithmetic (zero floating-point drift).
-* **AI & Document Intelligence:** SmolVLM / Multimodal VLM adapters, PyMuPDF, OpenCV.
-* **Frontend:** React, Vite, Tailwind CSS (Side-by-side invoice reviewer, ledger & statement viewer).
-* **Testing:** Automated Pytest suite testing accounting invariants and extraction math.
-
-### Slide 9: Conclusion & Future Scope
-* **Key Achievements:** Built an end-to-end bridge between multimodal document intelligence and audited financial reporting, extending prior research beyond pure OCR.
-* **Future Work:** Multi-currency support, automated bank reconciliation against bank statements, and deployment as an ERP plugin (Tally / Busy export).
+* **Document Intelligence:** PyMuPDF, Table Layout Corrector (Yao et al. hybrid model), Heuristic Extractor (Rana et al.).
+* **Frontend:** React, Vite, Tailwind CSS v4, Lucide Icons.
+* **Testing:** 14 automated Pytest tests passing 100% in 8.38s.
