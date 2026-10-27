@@ -2,7 +2,7 @@ from decimal import Decimal
 from datetime import date, datetime
 from typing import List, Optional
 from enum import Enum
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, computed_field
 
 
 class AccountCategory(str, Enum):
@@ -81,6 +81,7 @@ class ProposedJournalEntry(BaseModel):
     requires_human_review: bool = False
     review_reasons: List[str] = Field(default_factory=list)
 
+    @computed_field
     @property
     def total_debits(self) -> Decimal:
         return sum(
@@ -88,6 +89,7 @@ class ProposedJournalEntry(BaseModel):
             start=Decimal("0.00")
         ).quantize(Decimal("0.01"))
 
+    @computed_field
     @property
     def total_credits(self) -> Decimal:
         return sum(
@@ -95,6 +97,7 @@ class ProposedJournalEntry(BaseModel):
             start=Decimal("0.00")
         ).quantize(Decimal("0.01"))
 
+    @computed_field
     @property
     def is_balanced(self) -> bool:
         return self.total_debits == self.total_credits
