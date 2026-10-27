@@ -1,0 +1,189 @@
+import uuid
+from datetime import datetime, date, timezone
+from decimal import Decimal
+from sqlalchemy import (
+    Column,
+    String,
+    Date,
+    DateTime,
+    Numeric,
+    Boolean,
+    ForeignKey,
+    Text,
+    Enum as SQLEnum,
+)
+from sqlalchemy.orm import relationship
+
+from app.db.session import Base
+from app.schemas.accounting import AccountCategory, NormalBalance, EntryType, TransactionType
+
+
+def utc_now():
+    return datetime.now(timezone.utc)
+
+
+class Tenant(Base):
+    """Represents a business or tenant entity."""
+    __tablename__ = "tenants"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(255), nullable=False)
+    gstin = Column(String(15), nullable=True, unique=True)
+    currency = Column(String(3), default="INR", nullable=False)
+    created_at = Column(DateTime, default=utc_now)
+
+    accounts = relationship("Account", back_populates="tenant", cascade="all, delete-orphan")
+    documents = relationship("Document", back_populates="tenant", cascade="all, delete-orphan")
+    journal_entries = relationship("JournalEntry", back_populates="tenant", cascade="all, delete-orphan")
+
+
+class Account(Base):
+    """Chart of Accounts (General Ledger Account)."""
+    __tablename__ = "accounts"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
+    code = Column(String(20), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    category = Column(SQLEnum(AccountCategory), nullable=False)
+    normal_balance = Column(SQLEnum(NormalBalance), nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    description = Column(Text, nullable=True)
+
+    tenant = relationship("Tenant", back_populates="accounts")
+    journal_lines = relationship("JournalLine", back_populates="account")
+
+
+class DocumentStatus(str):
+    UPLOADED = "UPLOADED"
+    PROCESSING = "PROCESSING"
+    PROCESSED = "PROCESSED"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
+    APPROVED = "APPROVED"
+    POSTED = "POSTED"
+    REJECTED = "REJECTED"
+
+
+class Document(Base):
+    """An uploaded invoice or financial document."""
+    __tablename__ = "documents"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
+    filename = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_hash = Column(String(64), nullable=True, index=True)  # SHA-256 for duplicate upload detection
+    mime_type = Column(String(50), default="application/pdf")
+    status = Column(String(30), default=DocumentStatus.UPLOADED, nullable=False)
+    uploaded_at = Column(DateTime, default=utc_now)
+
+    tenant = relationship("Tenant", back_populates="documents")
+    invoice = relationship("Invoice", uselist=False, back_populates="document", cascade="all, delete-orphan")
+    journal_entries = relationship("JournalEntry", back_populates="document")
+
+
+class Invoice(Base):
+    """Persisted invoice metadata and totals."""
+    __tablename__ = "invoices"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    document_id = Column(String(36), ForeignKey("documents.id"), nullable=False, unique=True)
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
+    
+    invoice_number = Column(String(100), nullable=False, index=True)
+    invoice_date = Column(Date, nullable=False)
+    due_date = Column(Date, nullable=True)
+
+    vendor_name = Column(String(255), nullable=False)
+    vendor_gstin = Column(String(15), nullable=True)
+    vendor_address = Column(Text, nullable=True)
+
+    buyer_name = Column(String(255), nullable=True)
+    buyer_gstin = Column(String(15), nullable=True)
+
+    subtotal = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
+    total_tax = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
+    total_discount = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
+    grand_total = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
+
+    confidence_score = Column(Numeric(5, 2), default=Decimal("1.00"))
+    validation_flags = Column(Text, nullable=True)  # JSON-encoded array of warnings
+
+    document = relationship("Document", back_populates="invoice")
+    line_items = relationship("LineItem", back_populates="invoice", cascade="all, delete-orphan")
+
+
+class LineItem(Base):
+    """Persisted invoice table line-item."""
+    __tablename__ = "line_items"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    invoice_id = Column(String(36), ForeignKey("invoices.id"), nullable=False)
+
+    description = Column(String(500), nullable=False)
+    hsn_sac = Column(String(20), nullable=True)
+    quantity = Column(Numeric(12, 2), default=Decimal("1.00"), nullable=False)
+    unit_price = Column(Numeric(15, 2), nullable=False)
+    discount_amount = Column(Numeric(15, 2), default=Decimal("0.00"), nullable=False)
+    tax_rate_percent = Column(Numeric(5, 2), default=Decimal("0.00"), nullable=False)
+    total_amount = Column(Numeric(15, 2), nullable=False)
+
+    invoice = relationship("Invoice", back_populates="line_items")
+
+
+class EntryPostingStatus(str):
+    PROPOSED = "PROPOSED"
+    APPROVED = "APPROVED"
+    POSTED = "POSTED"
+    REVERSED = "REVERSED"
+
+
+class JournalEntry(Base):
+    """The authoritative double-entry transaction record."""
+    __tablename__ = "journal_entries"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
+    document_id = Column(String(36), ForeignKey("documents.id"), nullable=True)
+    
+    invoice_number = Column(String(100), nullable=False)
+    entry_date = Column(Date, nullable=False)
+    transaction_type = Column(SQLEnum(TransactionType), nullable=False)
+    narration = Column(Text, nullable=False)
+    status = Column(String(20), default=EntryPostingStatus.PROPOSED, nullable=False)
+    posted_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=utc_now)
+
+    tenant = relationship("Tenant", back_populates="journal_entries")
+    document = relationship("Document", back_populates="journal_entries")
+    lines = relationship("JournalLine", back_populates="entry", cascade="all, delete-orphan")
+
+
+class JournalLine(Base):
+    """A single debit or credit line in an authoritative journal entry."""
+    __tablename__ = "journal_lines"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    entry_id = Column(String(36), ForeignKey("journal_entries.id"), nullable=False)
+    account_id = Column(String(36), ForeignKey("accounts.id"), nullable=False)
+    
+    entry_type = Column(SQLEnum(EntryType), nullable=False)
+    amount = Column(Numeric(15, 2), nullable=False)
+    description = Column(String(255), nullable=True)
+
+    entry = relationship("JournalEntry", back_populates="lines")
+    account = relationship("Account", back_populates="journal_lines")
+
+
+class AuditLog(Base):
+    """Immutable audit trail for financial accountability."""
+    __tablename__ = "audit_logs"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    tenant_id = Column(String(36), ForeignKey("tenants.id"), nullable=False)
+    entity_name = Column(String(50), nullable=False)
+    entity_id = Column(String(36), nullable=False)
+    action = Column(String(50), nullable=False)  # e.g. PROPOSE, APPROVE, EDIT, POST, REJECT
+    performed_by = Column(String(100), default="SYSTEM")
+    details = Column(Text, nullable=True)  # JSON-encoded changes/context
+    timestamp = Column(DateTime, default=utc_now)
