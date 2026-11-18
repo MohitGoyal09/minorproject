@@ -72,8 +72,11 @@ build time.
   a manual `ALTER`.
 - **OCR is memory-hungry.** First scan loads the ONNX models, roughly 400–600 MB
   resident. On a 512 MB instance the process is killed mid-request.
-- **No authentication.** Anyone with the URL can post journal entries. Put it
-  behind a password or keep the URL private until auth exists.
+- **No registration flow.** One admin account is seeded from `ADMIN_EMAIL` /
+  `ADMIN_PASSWORD` the first time someone logs in. Set both on the host, and set
+  a real `SECRET_KEY` (rotate it to sign everyone out). Tokens live in
+  `localStorage`, so an XSS bug would expose them; there is no refresh-token or
+  revocation list yet.
 - **Windows users:** `run_system.ps1` is local only; the container uses the
   commands above.
 

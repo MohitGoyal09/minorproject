@@ -1,6 +1,14 @@
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+
+# Load .env from the repository root (or backend/) if present. Host environment
+# variables always win, so deployment settings are never overridden by a file.
+load_dotenv(Path(__file__).resolve().parents[3] / ".env")
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 # Default to SQLite for easy zero-setup local dev/testing; can be swapped to PostgreSQL via .env
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./accounting_system.db")

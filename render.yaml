@@ -12,5 +12,11 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.13.4"
+      - key: SECRET_KEY
+        generateValue: true   # JWT signing key; rotating it signs everyone out
+      - key: ADMIN_EMAIL
+        sync: false           # accountant login
+      - key: ADMIN_PASSWORD
+        sync: false           # change from the default before sharing the URL
       - key: DATABASE_URL
         sync: false        # paste a Postgres URL (Neon/Supabase); SQLite is wiped on redeploy

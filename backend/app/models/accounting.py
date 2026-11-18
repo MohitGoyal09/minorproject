@@ -180,6 +180,18 @@ class JournalLine(Base):
     account = relationship("Account", back_populates="journal_lines")
 
 
+class User(Base):
+    """Accountant login. One seeded admin; a deployment can add more rows."""
+    __tablename__ = "users"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(30), default="ADMIN", nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=utc_now)
+
+
 class AuditLog(Base):
     """Immutable audit trail for financial accountability."""
     __tablename__ = "audit_logs"

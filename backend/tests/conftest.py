@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import app.models.accounting  # noqa: F401 - registers every model on Base.metadata
+from app.auth.security import ADMIN_EMAIL, ADMIN_PASSWORD
 from app.main import app
 from app.db.session import Base, get_db
 
@@ -16,8 +17,8 @@ DATA_DIR = os.path.abspath(
 
 
 @pytest.fixture
-def client():
-    """Isolated in-memory database shared by every API test."""
+def anonymous_client():
+    """Isolated in-memory database, no credentials attached."""
     test_engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -37,3 +38,15 @@ def client():
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client(anonymous_client):
+    """Signed-in client. Existing API tests use this, so auth stays transparent."""
+    response = anonymous_client.post(
+        "/api/auth/login",
+        json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
+    )
+    assert response.status_code == 200, response.text
+    anonymous_client.headers["Authorization"] = f"Bearer {response.json()['access_token']}"
+    return anonymous_client

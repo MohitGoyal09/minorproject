@@ -6,6 +6,11 @@ SQLAlchemy==2.1.9
 pydantic==2.14.3
 python-multipart==0.0.34
 
+# Authentication (JWT bearer, bcrypt password hashes)
+pyjwt==2.15.1
+bcrypt==5.0.0
+python-dotenv==1.2.4
+
 # Document intelligence: PDF text layer + layout markdown
 pymupdf==2.1
 pymupdf4llm==2.1

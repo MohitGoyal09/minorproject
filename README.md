@@ -51,6 +51,25 @@ PYTHONPATH=backend python -m uvicorn app.main:app --port 8011 --reload
 cd frontend && VITE_PROXY_TARGET=http://127.0.0.1:8011 npm run dev
 ```
 
+## Authentication
+
+Every business endpoint needs a bearer token; `/api/health` and
+`/api/auth/login` stay public.
+
+```bash
+curl -X POST http://127.0.0.1:8011/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","password":"admin123"}'
+# -> {"access_token":"eyJ...","token_type":"bearer","user":{...}}
+
+curl http://127.0.0.1:8011/api/documents -H "Authorization: Bearer eyJ..."
+```
+
+The admin is seeded on first login from `ADMIN_EMAIL` / `ADMIN_PASSWORD`
+(defaults `admin@example.com` / `admin123`). Set `SECRET_KEY` and change the
+password before exposing the API; see `.env.example`. The UI shows a sign-in
+screen and keeps the token for 8 hours (`ACCESS_TOKEN_EXPIRE_MINUTES`).
+
 ## Deployment
 
 Vercel hosts the React app; the FastAPI backend needs a container host because

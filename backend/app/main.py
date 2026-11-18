@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app.db.session import engine, Base, get_db
+from app.auth.security import authenticate, create_access_token, get_current_user
 from app.models.accounting import (
     Tenant,
     Account,
@@ -21,6 +22,7 @@ from app.models.accounting import (
     AuditLog,
     DocumentStatus,
     EntryPostingStatus,
+    User,
 )
 from app.db.seed_accounts import seed_standard_accounts
 from app.schemas.accounting import ProposedJournalEntry, ProposedJournalLine, EntryType
@@ -36,6 +38,12 @@ from app.engine.invariants import run_comprehensive_validation
 from app.engine.ledger import post_journal_entry, generate_trial_balance
 from app.engine.statements import FinancialStatementService
 from app.engine import export as export_service
+from pydantic import BaseModel
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
@@ -255,7 +263,7 @@ def health_check():
 
 
 @app.get("/api/tenant")
-def get_tenant_info(db: Session = Depends(get_db)):
+def get_tenant_info(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     return {
         "id": tenant.id,
@@ -266,7 +274,7 @@ def get_tenant_info(db: Session = Depends(get_db)):
 
 
 @app.get("/api/accounts")
-def list_accounts(db: Session = Depends(get_db)):
+def list_accounts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     accounts = db.query(Account).filter(Account.tenant_id == tenant.id, Account.is_active == True).order_by(Account.code).all()
     return [
@@ -282,7 +290,7 @@ def list_accounts(db: Session = Depends(get_db)):
 
 
 @app.post("/api/documents/upload")
-async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     file_id = str(uuid.uuid4())
     safe_filename = f"{file_id}_{file.filename}"
@@ -307,7 +315,7 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
 
 
 @app.get("/api/documents")
-def list_documents(db: Session = Depends(get_db)):
+def list_documents(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     docs = db.query(Document).filter(Document.tenant_id == tenant.id).order_by(Document.uploaded_at.desc()).all()
     
@@ -327,7 +335,7 @@ def list_documents(db: Session = Depends(get_db)):
 
 
 @app.post("/api/documents/{doc_id}/process")
-def process_document(doc_id: str, db: Session = Depends(get_db)):
+def process_document(doc_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     doc = db.query(Document).filter(Document.id == doc_id, Document.tenant_id == tenant.id).first()
     if not doc:
@@ -358,7 +366,7 @@ def process_document(doc_id: str, db: Session = Depends(get_db)):
 
 
 @app.get("/api/documents/{doc_id}")
-def get_document_details(doc_id: str, db: Session = Depends(get_db)):
+def get_document_details(doc_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     doc = db.query(Document).filter(Document.id == doc_id, Document.tenant_id == tenant.id).first()
     if not doc:
@@ -389,7 +397,7 @@ def get_document_details(doc_id: str, db: Session = Depends(get_db)):
 
 
 @app.put("/api/documents/{doc_id}/invoice")
-def correct_invoice(doc_id: str, correction: InvoiceCorrectionRequest, db: Session = Depends(get_db)):
+def correct_invoice(doc_id: str, correction: InvoiceCorrectionRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Apply a human correction from the review interface and re-validate."""
     tenant = get_or_create_default_tenant(db)
     doc = db.query(Document).filter(Document.id == doc_id, Document.tenant_id == tenant.id).first()
@@ -445,7 +453,7 @@ def correct_invoice(doc_id: str, correction: InvoiceCorrectionRequest, db: Sessi
 
 
 @app.post("/api/journal/post")
-def post_entry(proposal: ProposedJournalEntry, db: Session = Depends(get_db)):
+def post_entry(proposal: ProposedJournalEntry, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     try:
         posted = post_journal_entry(db, tenant.id, proposal, posted_by="USER_REVIEWER", allow_review_override=True)
@@ -463,13 +471,13 @@ def post_entry(proposal: ProposedJournalEntry, db: Session = Depends(get_db)):
 
 
 @app.get("/api/reports/ledger")
-def get_general_ledger(db: Session = Depends(get_db)):
+def get_general_ledger(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     return _ledger_entries(db, tenant.id)
 
 
 @app.get("/api/reports/trial-balance")
-def get_trial_balance_report(db: Session = Depends(get_db)):
+def get_trial_balance_report(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     tb = generate_trial_balance(db, tenant.id, as_of_date=date.today())
     return {
@@ -493,7 +501,7 @@ def get_trial_balance_report(db: Session = Depends(get_db)):
 
 
 @app.get("/api/reports/profit-and-loss")
-def get_profit_and_loss(db: Session = Depends(get_db)):
+def get_profit_and_loss(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     pnl = FinancialStatementService.generate_profit_and_loss(db, tenant.id, as_of_date=date.today())
     # Format Decimals as floats for JSON serialization
@@ -508,7 +516,7 @@ def get_profit_and_loss(db: Session = Depends(get_db)):
 
 
 @app.get("/api/reports/balance-sheet")
-def get_balance_sheet(db: Session = Depends(get_db)):
+def get_balance_sheet(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     bs = FinancialStatementService.generate_balance_sheet(db, tenant.id, as_of_date=date.today())
     bs["total_assets"] = float(bs["total_assets"])
@@ -526,7 +534,7 @@ def get_balance_sheet(db: Session = Depends(get_db)):
 
 
 @app.get("/api/reports/audit-logs")
-def get_audit_logs(db: Session = Depends(get_db)):
+def get_audit_logs(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tenant = get_or_create_default_tenant(db)
     logs = db.query(AuditLog).filter(AuditLog.tenant_id == tenant.id).order_by(AuditLog.timestamp.desc()).all()
     return [
@@ -551,7 +559,7 @@ EXPORTABLE_REPORTS = ("ledger", "trial-balance", "profit-and-loss", "balance-she
 
 
 @app.get("/api/reports/export/{report_name}")
-def export_report(report_name: str, format: str = "csv", db: Session = Depends(get_db)):
+def export_report(report_name: str, format: str = "csv", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Download a report as CSV / Excel, or the journal as Tally import XML."""
     tenant = get_or_create_default_tenant(db)
 
@@ -592,3 +600,42 @@ def export_report(report_name: str, format: str = "csv", db: Session = Depends(g
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}.xlsx"'},
     )
+
+
+# ---------------------------------------------------------------------------
+# Authentication
+# ---------------------------------------------------------------------------
+
+@app.post("/api/auth/login")
+def login(payload: LoginRequest, db: Session = Depends(get_db)):
+    """Exchange credentials for a bearer token."""
+    user = authenticate(db, payload.email, payload.password)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    tenant = get_or_create_default_tenant(db)
+    db.add(AuditLog(
+        tenant_id=tenant.id,
+        entity_name="User",
+        entity_id=user.id,
+        action="LOGIN",
+        performed_by=user.email,
+        details=json.dumps({"email": user.email, "role": user.role}),
+    ))
+    db.commit()
+
+    return {
+        "access_token": create_access_token(user.id, user.email),
+        "token_type": "bearer",
+        "expires_in_minutes": int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480")),
+        "user": {"id": user.id, "email": user.email, "role": user.role},
+    }
+
+
+@app.get("/api/auth/me")
+def current_user_profile(current_user: User = Depends(get_current_user)):
+    return {"id": current_user.id, "email": current_user.email, "role": current_user.role}
