@@ -5,7 +5,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
-from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, Response
+from fastapi import APIRouter, FastAPI, Depends, UploadFile, File, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -62,6 +62,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+public_router = APIRouter(prefix="/api")
+
+# One guard for every business route. New endpoints are protected automatically.
+protected_router = APIRouter(prefix="/api", dependencies=[Depends(get_current_user)])
 
 UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "data", "uploads"))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -257,13 +262,13 @@ def _ledger_entries(db: Session, tenant_id: str) -> List[dict]:
     ]
 
 
-@app.get("/api/health")
+@public_router.get("/health")
 def health_check():
     return {"status": "ok", "system": "AI-Powered Accounting Automation Engine", "version": "1.0.0"}
 
 
-@app.get("/api/tenant")
-def get_tenant_info(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.get("/tenant")
+def get_tenant_info(db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     return {
         "id": tenant.id,
@@ -273,8 +278,8 @@ def get_tenant_info(db: Session = Depends(get_db), current_user: User = Depends(
     }
 
 
-@app.get("/api/accounts")
-def list_accounts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.get("/accounts")
+def list_accounts(db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     accounts = db.query(Account).filter(Account.tenant_id == tenant.id, Account.is_active == True).order_by(Account.code).all()
     return [
@@ -289,8 +294,8 @@ def list_accounts(db: Session = Depends(get_db), current_user: User = Depends(ge
     ]
 
 
-@app.post("/api/documents/upload")
-async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.post("/documents/upload")
+async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     file_id = str(uuid.uuid4())
     safe_filename = f"{file_id}_{file.filename}"
@@ -314,8 +319,8 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     return {"document_id": doc.id, "filename": doc.filename, "status": doc.status}
 
 
-@app.get("/api/documents")
-def list_documents(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.get("/documents")
+def list_documents(db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     docs = db.query(Document).filter(Document.tenant_id == tenant.id).order_by(Document.uploaded_at.desc()).all()
     
@@ -334,8 +339,8 @@ def list_documents(db: Session = Depends(get_db), current_user: User = Depends(g
     return results
 
 
-@app.post("/api/documents/{doc_id}/process")
-def process_document(doc_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.post("/documents/{doc_id}/process")
+def process_document(doc_id: str, db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     doc = db.query(Document).filter(Document.id == doc_id, Document.tenant_id == tenant.id).first()
     if not doc:
@@ -365,8 +370,8 @@ def process_document(doc_id: str, db: Session = Depends(get_db), current_user: U
     }
 
 
-@app.get("/api/documents/{doc_id}")
-def get_document_details(doc_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.get("/documents/{doc_id}")
+def get_document_details(doc_id: str, db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     doc = db.query(Document).filter(Document.id == doc_id, Document.tenant_id == tenant.id).first()
     if not doc:
@@ -396,8 +401,8 @@ def get_document_details(doc_id: str, db: Session = Depends(get_db), current_use
     }
 
 
-@app.put("/api/documents/{doc_id}/invoice")
-def correct_invoice(doc_id: str, correction: InvoiceCorrectionRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.put("/documents/{doc_id}/invoice")
+def correct_invoice(doc_id: str, correction: InvoiceCorrectionRequest, db: Session = Depends(get_db)):
     """Apply a human correction from the review interface and re-validate."""
     tenant = get_or_create_default_tenant(db)
     doc = db.query(Document).filter(Document.id == doc_id, Document.tenant_id == tenant.id).first()
@@ -452,8 +457,8 @@ def correct_invoice(doc_id: str, correction: InvoiceCorrectionRequest, db: Sessi
     }
 
 
-@app.post("/api/journal/post")
-def post_entry(proposal: ProposedJournalEntry, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.post("/journal/post")
+def post_entry(proposal: ProposedJournalEntry, db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     try:
         posted = post_journal_entry(db, tenant.id, proposal, posted_by="USER_REVIEWER", allow_review_override=True)
@@ -470,14 +475,14 @@ def post_entry(proposal: ProposedJournalEntry, db: Session = Depends(get_db), cu
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.get("/api/reports/ledger")
-def get_general_ledger(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.get("/reports/ledger")
+def get_general_ledger(db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     return _ledger_entries(db, tenant.id)
 
 
-@app.get("/api/reports/trial-balance")
-def get_trial_balance_report(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.get("/reports/trial-balance")
+def get_trial_balance_report(db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     tb = generate_trial_balance(db, tenant.id, as_of_date=date.today())
     return {
@@ -500,8 +505,8 @@ def get_trial_balance_report(db: Session = Depends(get_db), current_user: User =
     }
 
 
-@app.get("/api/reports/profit-and-loss")
-def get_profit_and_loss(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.get("/reports/profit-and-loss")
+def get_profit_and_loss(db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     pnl = FinancialStatementService.generate_profit_and_loss(db, tenant.id, as_of_date=date.today())
     # Format Decimals as floats for JSON serialization
@@ -515,8 +520,8 @@ def get_profit_and_loss(db: Session = Depends(get_db), current_user: User = Depe
     return pnl
 
 
-@app.get("/api/reports/balance-sheet")
-def get_balance_sheet(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.get("/reports/balance-sheet")
+def get_balance_sheet(db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     bs = FinancialStatementService.generate_balance_sheet(db, tenant.id, as_of_date=date.today())
     bs["total_assets"] = float(bs["total_assets"])
@@ -533,8 +538,8 @@ def get_balance_sheet(db: Session = Depends(get_db), current_user: User = Depend
     return bs
 
 
-@app.get("/api/reports/audit-logs")
-def get_audit_logs(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.get("/reports/audit-logs")
+def get_audit_logs(db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
     logs = db.query(AuditLog).filter(AuditLog.tenant_id == tenant.id).order_by(AuditLog.timestamp.desc()).all()
     return [
@@ -558,8 +563,8 @@ def get_audit_logs(db: Session = Depends(get_db), current_user: User = Depends(g
 EXPORTABLE_REPORTS = ("ledger", "trial-balance", "profit-and-loss", "balance-sheet")
 
 
-@app.get("/api/reports/export/{report_name}")
-def export_report(report_name: str, format: str = "csv", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@protected_router.get("/reports/export/{report_name}")
+def export_report(report_name: str, format: str = "csv", db: Session = Depends(get_db)):
     """Download a report as CSV / Excel, or the journal as Tally import XML."""
     tenant = get_or_create_default_tenant(db)
 
@@ -606,7 +611,7 @@ def export_report(report_name: str, format: str = "csv", db: Session = Depends(g
 # Authentication
 # ---------------------------------------------------------------------------
 
-@app.post("/api/auth/login")
+@public_router.post("/auth/login")
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
     """Exchange credentials for a bearer token."""
     user = authenticate(db, payload.email, payload.password)
@@ -636,6 +641,10 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     }
 
 
-@app.get("/api/auth/me")
+@protected_router.get("/auth/me")
 def current_user_profile(current_user: User = Depends(get_current_user)):
     return {"id": current_user.id, "email": current_user.email, "role": current_user.role}
+
+
+app.include_router(public_router)
+app.include_router(protected_router)

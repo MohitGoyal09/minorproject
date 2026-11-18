@@ -3,7 +3,7 @@ import axios from 'axios';
 import { 
   FileText, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, 
   BookOpen, Scale, PieChart, History, Upload, RefreshCw, Sparkles,
-  Layers, Landmark, XCircle, Info, ShieldAlert, Building2, Coins, Receipt,
+  Layers, Landmark, XCircle, Info, ShieldAlert, Building2,
   TrendingUp, Check, ChevronRight, SlidersHorizontal, Pencil, Save, X, Download,
   FileSpreadsheet, LogOut
 } from 'lucide-react';
@@ -40,15 +40,15 @@ function LoginScreen({ onSubmit, error, busy }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-100 flex items-center justify-center px-4 font-sans selection:bg-indigo-600 selection:text-white">
-      <form onSubmit={submit} className="w-full max-w-sm bg-[#0b0f19] border border-slate-800/90 rounded-2xl shadow-2xl p-7 space-y-5">
+    <div className="min-h-screen bg-[#0A0C0F] text-slate-100 flex items-center justify-center px-4 font-sans selection:bg-blue-700 selection:text-white">
+      <form onSubmit={submit} className="w-full max-w-sm bg-[#111418] border border-slate-800/90 rounded-xl shadow-xl shadow-black/30 p-7 space-y-5">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/10">
+          <div className="w-10 h-10 rounded-lg bg-[#1B2028] border border-[#2A313B] flex items-center justify-center text-slate-200">
             <Landmark className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-sm font-extrabold text-white">Invoice-to-Accounting OS</h1>
-            <p className="text-[11px] text-slate-400">Accountant sign in</p>
+            <h1 className="text-sm font-semibold text-white">Invoice-to-Accounting OS</h1>
+            <p className="text-[11px] text-slate-500">Sign in to continue</p>
           </div>
         </div>
 
@@ -61,7 +61,7 @@ function LoginScreen({ onSubmit, error, busy }) {
               onChange={(event) => setEmail(event.target.value)}
               required
               autoComplete="username"
-              className="mt-1 w-full bg-[#050811] border border-slate-700 focus:border-indigo-400 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
+              className="mt-1 w-full bg-[#0D1014] border border-slate-700 focus:border-blue-400 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
             />
           </label>
           <label className="block">
@@ -72,7 +72,7 @@ function LoginScreen({ onSubmit, error, busy }) {
               onChange={(event) => setPassword(event.target.value)}
               required
               autoComplete="current-password"
-              className="mt-1 w-full bg-[#050811] border border-slate-700 focus:border-indigo-400 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
+              className="mt-1 w-full bg-[#0D1014] border border-slate-700 focus:border-blue-400 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
             />
           </label>
         </div>
@@ -87,14 +87,13 @@ function LoginScreen({ onSubmit, error, busy }) {
         <button
           type="submit"
           disabled={busy}
-          className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+          className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
         >
           {busy ? 'Signing in...' : 'Sign in'}
         </button>
 
         <p className="text-[10px] text-slate-500 leading-relaxed">
-          Credentials come from the server environment (ADMIN_EMAIL / ADMIN_PASSWORD).
-          The token is kept in this browser for 8 hours.
+          Use the credentials provided by your administrator.
         </p>
       </form>
     </div>
@@ -108,7 +107,7 @@ function EditInput({ value, onChange, type = 'text', align = 'left' }) {
       type={type}
       value={value ?? ''}
       onChange={(event) => onChange(event.target.value)}
-      className={`w-full bg-[#0b1220] border border-indigo-500/40 hover:border-indigo-500/70 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30 rounded-md px-2 py-1 text-xs text-white font-mono outline-none transition-colors ${alignment}`}
+      className={`w-full bg-[#0D1014] border border-blue-500/40 hover:border-blue-500/70 focus:border-blue-400 focus:ring-1 focus:ring-blue-500/30 rounded-md px-2 py-1 text-xs text-white font-mono outline-none transition-colors ${alignment}`}
     />
   );
 }
@@ -397,26 +396,23 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-white antialiased">
+    <div className="min-h-screen bg-[#0A0C0F] text-slate-100 flex flex-col font-sans selection:bg-blue-700 selection:text-white antialiased">
       
       {/* Top Header */}
-      <header className="bg-[#0b0f19]/90 border-b border-slate-800/80 sticky top-0 z-50 backdrop-blur-md">
+      <header className="bg-[#111418]/90 border-b border-slate-800/80 sticky top-0 z-50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/10">
+            <div className="w-10 h-10 rounded-xl bg-[#1B2028] border border-[#2A313B] flex items-center justify-center text-slate-200">
               <Landmark className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2.5">
-                <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+                <h1 className="text-sm sm:text-base font-semibold text-white tracking-tight">
                   Invoice-to-Accounting OS
                 </h1>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-md">
-                  Autonomous Engine
-                </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">
-                Dual-Path Extraction (Digital + OCR) • Indian GST & AS 10 Rules • Immutable Ledger
+              <p className="text-[11px] text-slate-500 font-medium">
+                GST-compliant double-entry accounting
               </p>
             </div>
           </div>
@@ -432,9 +428,9 @@ export default function App() {
                 </p>
               </div>
               <div className="h-8 w-px bg-slate-800 hidden sm:block"></div>
-              <div className="flex items-center space-x-2 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full shadow-inner">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Audit & Invariant Engine Active</span>
+              <div className="flex items-center space-x-2 text-[11px] font-medium text-slate-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80"></span>
+                <span>Ledger sealed</span>
               </div>
               <div className="h-8 w-px bg-slate-800 hidden sm:block"></div>
               <div className="flex items-center space-x-2">
@@ -470,11 +466,11 @@ export default function App() {
                 onClick={() => handleTabChange(tab.id)}
                 className={`flex items-center space-x-2 py-3 px-3.5 border-b-2 font-medium text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5'
+                    ? 'border-blue-500 text-blue-400 font-bold bg-blue-500/5'
                     : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
                 {tab.count !== undefined && (
                   <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
@@ -513,75 +509,55 @@ export default function App() {
             
             {/* KPI Metric Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#0b0f19] p-4 rounded-xl border border-slate-800/90 shadow-sm flex items-center justify-between">
-                <div>
-                  <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Total Invoices</span>
-                  <p className="text-xl font-extrabold text-white font-mono mt-1">{totalInvoices}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Ingested via Hybrid OCR</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                  <Receipt className="w-5 h-5" />
-                </div>
+              <div className="bg-[#111418] p-4 rounded-xl border border-slate-800/90">
+                <span className="text-slate-500 text-xs font-medium block">Total invoices</span>
+                <p className="text-2xl font-semibold text-white font-mono mt-1.5 tabular-nums">{totalInvoices}</p>
+                <p className="text-[11px] text-slate-500 mt-1">Digital and OCR</p>
               </div>
 
-              <div className="bg-[#0b0f19] p-4 rounded-xl border border-slate-800/90 shadow-sm flex items-center justify-between">
-                <div>
-                  <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Posted to Ledger</span>
-                  <p className="text-xl font-extrabold text-emerald-400 font-mono mt-1">{postedCount}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Audited & Reconciled</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
+              <div className="bg-[#111418] p-4 rounded-xl border border-slate-800/90">
+                <span className="text-slate-500 text-xs font-medium block">Posted to ledger</span>
+                <p className="text-2xl font-semibold text-white font-mono mt-1.5 tabular-nums">{postedCount}</p>
+                <p className="text-[11px] text-slate-500 mt-1">Audited and reconciled</p>
               </div>
 
-              <div className="bg-[#0b0f19] p-4 rounded-xl border border-slate-800/90 shadow-sm flex items-center justify-between">
-                <div>
-                  <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Review Gate Queued</span>
-                  <p className="text-xl font-extrabold text-amber-400 font-mono mt-1">{reviewCount}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Threshold / Tax Flags</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                  <AlertTriangle className="w-5 h-5" />
-                </div>
+              <div className="bg-[#111418] p-4 rounded-xl border border-slate-800/90">
+                <span className="text-slate-500 text-xs font-medium block">Awaiting review</span>
+                <p className={`text-2xl font-semibold font-mono mt-1.5 tabular-nums ${reviewCount > 0 ? 'text-amber-400' : 'text-white'}`}>{reviewCount}</p>
+                <p className="text-[11px] text-slate-500 mt-1">Threshold or tax flags</p>
               </div>
 
-              <div className="bg-[#0b0f19] p-4 rounded-xl border border-slate-800/90 shadow-sm flex items-center justify-between">
-                <div>
-                  <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Total Volume Ingested</span>
-                  <p className="text-xl font-extrabold text-sky-400 font-mono mt-1">₹{totalPayableVolume.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">Verified Indian GST Slabs</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-                  <Coins className="w-5 h-5" />
-                </div>
+              <div className="bg-[#111418] p-4 rounded-xl border border-slate-800/90">
+                <span className="text-slate-500 text-xs font-medium block">Volume ingested</span>
+                <p className="text-2xl font-semibold text-white font-mono mt-1.5 tabular-nums">₹{totalPayableVolume.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-[11px] text-slate-500 mt-1">GST verified</p>
               </div>
             </div>
 
             {/* Upload Area */}
-            <div className="bg-[#0b0f19] p-6 sm:p-8 rounded-2xl border-2 border-dashed border-slate-800 hover:border-indigo-500/60 transition-all text-center shadow-lg">
-              <div className="w-12 h-12 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mx-auto mb-3">
-                <Upload className="w-6 h-6" />
+            <div className="bg-[#111418] p-6 sm:p-8 rounded-xl border-2 border-dashed border-slate-800 hover:border-blue-500/60 transition-colors text-center">
+              <div className="w-11 h-11 rounded-lg bg-[#161A20] border border-[#252B33] flex items-center justify-center text-slate-400 mx-auto mb-3">
+                <Upload className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-extrabold text-white">Upload PDF Invoice for Autonomous Processing</h3>
-              <p className="text-xs text-slate-400 max-w-xl mx-auto mt-1 mb-5 leading-relaxed">
-                Accepts multi-item scanned or digital PDFs. Employs <b>Yao et al. (2026) Table Layout Correction</b> to eliminate footer-row contamination and <b>Rana et al. (2025) Heuristic Extraction</b> for template-free metadata capture.
+              <h3 className="text-base font-semibold text-white">Upload an invoice PDF</h3>
+              <p className="text-xs text-slate-400 max-w-lg mx-auto mt-1.5 mb-5 leading-relaxed">
+                Digital PDFs are read from their text layer. Scans and photographs go through OCR and are marked for review before posting.
               </p>
               
               <div className="flex flex-wrap items-center justify-center gap-3">
-                <label className="inline-flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer shadow-md shadow-indigo-600/30 transition-all active:scale-[0.98]">
+                <label className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg cursor-pointer transition-colors active:scale-[0.99]">
                   <Upload className="w-4 h-4 mr-2" />
-                  <span>Select Invoice PDF</span>
+                  <span>Select PDF</span>
                   <input type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" />
                 </label>
               </div>
             </div>
 
             {/* Invoices List */}
-            <div className="bg-[#0b0f19] rounded-2xl border border-slate-800/90 overflow-hidden shadow-xl">
-              <div className="px-6 py-4 border-b border-slate-800 flex flex-wrap justify-between items-center gap-3 bg-[#080c15]">
+            <div className="bg-[#111418] rounded-xl border border-slate-800/90 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-800 flex flex-wrap justify-between items-center gap-3 bg-[#0E1116]">
                 <div>
-                  <h2 className="font-extrabold text-white text-sm tracking-wide">Document Ingestion Pipeline</h2>
+                  <h2 className="font-semibold text-white text-sm tracking-wide">Document Ingestion Pipeline</h2>
                   <p className="text-xs text-slate-400">Processed invoices available for audit, invariant verification, and accounting review</p>
                 </div>
 
@@ -593,7 +569,7 @@ export default function App() {
                         onClick={() => setFilterStatus(st)}
                         className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                           filterStatus === st 
-                            ? 'bg-indigo-600 text-white shadow-xs' 
+                            ? 'bg-blue-600 text-white shadow-xs' 
                             : 'text-slate-400 hover:text-slate-200'
                         }`}
                       >
@@ -619,7 +595,7 @@ export default function App() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#050811] text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
+                    <thead className="bg-[#0D1014] text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
                       <tr>
                         <th className="py-3 px-5">Source File</th>
                         <th className="py-3 px-4">Invoice #</th>
@@ -633,7 +609,7 @@ export default function App() {
                       {filteredDocuments.map((doc) => (
                         <tr key={doc.id} className="hover:bg-slate-800/40 transition-colors">
                           <td className="py-3.5 px-5 font-semibold text-slate-200 flex items-center space-x-2.5">
-                            <FileText className="w-4 h-4 text-indigo-400 shrink-0" />
+                            <FileText className="w-4 h-4 text-blue-400 shrink-0" />
                             <span className="truncate max-w-xs">{doc.filename}</span>
                           </td>
                           <td className="py-3.5 px-4 text-slate-300 font-mono text-xs">{doc.invoice_number || '—'}</td>
@@ -644,7 +620,7 @@ export default function App() {
                           <td className="py-3.5 px-4">
                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${
                               doc.status === 'POSTED' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                              doc.status === 'PROCESSED' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' :
+                              doc.status === 'PROCESSED' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                               doc.status === 'REVIEW_REQUIRED' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' :
                               'bg-slate-800 text-slate-400 border-slate-700'
                             }`}>
@@ -658,7 +634,7 @@ export default function App() {
                               <button
                                 onClick={() => handleProcessDocument(doc.id)}
                                 disabled={processingDocId === doc.id}
-                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-md shadow-xs transition-colors cursor-pointer"
+                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-md shadow-xs transition-colors cursor-pointer"
                               >
                                 {processingDocId === doc.id ? 'Processing...' : 'Run Extraction'}
                               </button>
@@ -685,11 +661,11 @@ export default function App() {
         {activeTab === 'review' && (
           <div>
             {!selectedDoc ? (
-              <div className="bg-[#0b0f19] p-16 text-center rounded-2xl border border-slate-800">
+              <div className="bg-[#111418] p-16 text-center rounded-xl border border-slate-800">
                 <ShieldCheck className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <h3 className="text-base font-extrabold text-white">No Document Selected</h3>
+                <h3 className="text-base font-semibold text-white">No Document Selected</h3>
                 <p className="text-xs text-slate-400 mt-1 mb-5">Please select an invoice from Tab 1 to inspect extraction and double-entry proposals.</p>
-                <button onClick={() => setActiveTab('invoices')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer">
+                <button onClick={() => setActiveTab('invoices')} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg cursor-pointer">
                   Back to Invoices
                 </button>
               </div>
@@ -697,11 +673,11 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 
                 {/* LEFT PANEL: Extracted Document & Line Items */}
-                <div className="bg-[#0b0f19] rounded-2xl border border-slate-800/90 shadow-xl flex flex-col overflow-hidden">
-                  <div className="p-4 border-b border-slate-800 bg-[#080c15] flex justify-between items-center">
+                <div className="bg-[#111418] rounded-xl border border-slate-800/90 flex flex-col overflow-hidden">
+                  <div className="p-4 border-b border-slate-800 bg-[#0E1116] flex justify-between items-center">
                     <div>
                       <h2 className="text-sm font-bold text-white flex items-center space-x-2">
-                        <FileText className="w-4 h-4 text-indigo-400" />
+                        <FileText className="w-4 h-4 text-blue-400" />
                         <span>Extracted Document Intelligence</span>
                       </h2>
                       <p className="text-[11px] text-slate-400 font-mono truncate max-w-xs">{selectedDoc.filename}</p>
@@ -709,7 +685,7 @@ export default function App() {
                     <div className="flex items-center space-x-2">
                       {selectedDoc.invoice?.confidence && selectedDoc.invoice.confidence !== 'HIGH' && (
                         <span
-                          className="px-2 py-1 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                          className="px-2 py-1 text-[10px] font-semibold rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30"
                           title="Fields must be checked against the original document before posting."
                         >
                           {selectedDoc.invoice.confidence === 'LOW' ? 'LOW CONFIDENCE' : 'OCR — VERIFY'}
@@ -721,7 +697,7 @@ export default function App() {
                       {selectedDoc.invoice && selectedDoc.status !== 'POSTED' && !editMode && (
                         <button
                           onClick={startEditing}
-                          className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 flex items-center space-x-1 cursor-pointer transition-colors"
+                          className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/40 flex items-center space-x-1 cursor-pointer transition-colors"
                         >
                           <Pencil className="w-3 h-3" />
                           <span>Correct</span>
@@ -752,13 +728,13 @@ export default function App() {
                   {selectedDoc.invoice ? (
                     <div className="p-5 space-y-5 flex-1">
                       {/* Metadata Grid */}
-                      <div className="grid grid-cols-2 gap-3 bg-[#050811] p-3.5 rounded-xl border border-slate-800/80 text-xs">
+                      <div className="grid grid-cols-2 gap-3 bg-[#0D1014] p-3.5 rounded-xl border border-slate-800/80 text-xs">
                         <div>
                           <span className="text-slate-400 block text-[11px] font-medium">Invoice Number</span>
                           {editMode ? (
                             <div className="mt-1"><EditInput value={draft.invoice_number} onChange={(v) => updateDraft('invoice_number', v)} /></div>
                           ) : (
-                            <p className="font-extrabold text-white font-mono text-xs mt-0.5">{selectedDoc.invoice.invoice_number}</p>
+                            <p className="font-semibold text-white font-mono text-xs mt-0.5">{selectedDoc.invoice.invoice_number}</p>
                           )}
                         </div>
                         <div>
@@ -766,7 +742,7 @@ export default function App() {
                           {editMode ? (
                             <div className="mt-1"><EditInput type="date" value={draft.invoice_date} onChange={(v) => updateDraft('invoice_date', v)} /></div>
                           ) : (
-                            <p className="font-extrabold text-white text-xs mt-0.5">{selectedDoc.invoice.invoice_date}</p>
+                            <p className="font-semibold text-white text-xs mt-0.5">{selectedDoc.invoice.invoice_date}</p>
                           )}
                         </div>
                         <div>
@@ -811,7 +787,7 @@ export default function App() {
                         ) : (
                           (selectedDoc.invoice.place_of_supply || selectedDoc.invoice.due_date) && (
                             <div className="col-span-2 pt-1 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
-                              <span className="text-slate-400">Place of Supply: <span className="font-mono text-indigo-400 font-bold">{selectedDoc.invoice.place_of_supply || 'N/A'}</span></span>
+                              <span className="text-slate-400">Place of Supply: <span className="font-mono text-blue-400 font-bold">{selectedDoc.invoice.place_of_supply || 'N/A'}</span></span>
                               <span className="text-slate-400">Due: <span className="font-mono text-slate-300">{selectedDoc.invoice.due_date || 'N/A'}</span></span>
                             </div>
                           )
@@ -824,12 +800,12 @@ export default function App() {
                           <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                             Reconstructed Line Items (Yao et al. Corrected)
                           </h4>
-                          <span className="text-[10px] text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 px-2 py-0.5 rounded font-mono">
+                          <span className="text-[10px] text-blue-300 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded font-mono">
                             {selectedDoc.invoice.line_items.length} Items Captured
                           </span>
                         </div>
 
-                        <div className="border border-slate-800 rounded-xl overflow-hidden bg-[#050811]">
+                        <div className="border border-slate-800 rounded-xl overflow-hidden bg-[#0D1014]">
                           <table className="w-full text-left text-xs">
                             <thead className="bg-slate-900/90 text-slate-300 font-semibold border-b border-slate-800 text-[11px]">
                               <tr>
@@ -882,7 +858,7 @@ export default function App() {
                       </div>
 
                       {/* Totals Summary */}
-                      <div className="bg-[#050811] p-4 rounded-xl border border-slate-800 text-xs space-y-1.5 font-mono">
+                      <div className="bg-[#0D1014] p-4 rounded-xl border border-slate-800 text-xs space-y-1.5 font-mono">
                         <div className="flex justify-between items-center font-sans gap-3">
                           <span className="text-slate-400">Taxable Subtotal:</span>
                           {editMode
@@ -905,7 +881,7 @@ export default function App() {
                           <span>Grand Total Payable:</span>
                           {editMode
                             ? <div className="w-32"><EditInput value={draft.grand_total} align="right" onChange={(v) => updateDraft('grand_total', v)} /></div>
-                            : <span className="font-mono text-indigo-400 font-extrabold text-base">₹{selectedDoc.invoice.grand_total.toFixed(2)}</span>}
+                            : <span className="font-mono text-blue-400 font-semibold text-base">₹{selectedDoc.invoice.grand_total.toFixed(2)}</span>}
                         </div>
                         {editMode && (
                           <p className="text-[10px] text-amber-300/90 pt-1.5 border-t border-slate-800/60 leading-relaxed">
@@ -923,8 +899,8 @@ export default function App() {
                 </div>
 
                 {/* RIGHT PANEL: AI Accounting Proposal & Invariant Verification */}
-                <div className="bg-[#0b0f19] rounded-2xl border border-slate-800/90 shadow-xl flex flex-col overflow-hidden">
-                  <div className="p-4 border-b border-slate-800 bg-[#080c15] flex justify-between items-center">
+                <div className="bg-[#111418] rounded-xl border border-slate-800/90 flex flex-col overflow-hidden">
+                  <div className="p-4 border-b border-slate-800 bg-[#0E1116] flex justify-between items-center">
                     <div>
                       <h2 className="text-sm font-bold text-white flex items-center space-x-2">
                         <Scale className="w-4 h-4 text-emerald-400" />
@@ -945,10 +921,10 @@ export default function App() {
                     <div className="p-5 space-y-5 flex-1 flex flex-col justify-between">
                       <div className="space-y-4">
                         {/* Transaction Type & Narration */}
-                        <div className="bg-[#050811] p-3.5 rounded-xl border border-slate-800 text-xs space-y-2">
+                        <div className="bg-[#0D1014] p-3.5 rounded-xl border border-slate-800 text-xs space-y-2">
                           <div className="flex items-center space-x-2">
                             <span className="text-slate-400 font-medium">Classification:</span>
-                            <span className="font-mono text-[11px] font-bold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/30">
+                            <span className="font-mono text-[11px] font-bold text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/30">
                               {selectedDoc.proposal.transaction_type}
                             </span>
                           </div>
@@ -959,7 +935,7 @@ export default function App() {
                         </div>
 
                         {/* Double-Entry Table */}
-                        <div className="border border-slate-800 rounded-xl overflow-hidden bg-[#050811]">
+                        <div className="border border-slate-800 rounded-xl overflow-hidden bg-[#0D1014]">
                           <table className="w-full text-left text-xs">
                             <thead className="bg-slate-900/90 text-slate-300 font-semibold border-b border-slate-800 text-[11px]">
                               <tr>
@@ -974,12 +950,12 @@ export default function App() {
                                 <tr key={idx} className="hover:bg-slate-800/30">
                                   <td className="py-2.5 px-3.5 font-semibold text-slate-200">
                                     <div className="flex items-center space-x-2">
-                                      <span className={`w-2 h-2 rounded-full shrink-0 ${line.entry_type === 'DEBIT' ? 'bg-sky-400' : 'bg-emerald-400'}`}></span>
+                                      <span className={`w-2 h-2 rounded-full shrink-0 ${line.entry_type === 'DEBIT' ? 'bg-blue-400' : 'bg-emerald-400'}`}></span>
                                       <span>{line.account_name}</span>
                                     </div>
                                   </td>
                                   <td className="py-2.5 px-2 text-slate-400 font-mono text-[11px] font-bold">{line.account_code}</td>
-                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-sky-400">
+                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-blue-400">
                                     {line.entry_type === 'DEBIT' ? `₹${line.amount.toFixed(2)}` : '—'}
                                   </td>
                                   <td className="py-2.5 px-3.5 text-right font-mono font-bold text-emerald-400">
@@ -988,18 +964,18 @@ export default function App() {
                                 </tr>
                               ))}
                             </tbody>
-                            <tfoot className="bg-[#020617] font-bold border-t-2 border-slate-800 text-xs">
+                            <tfoot className="bg-[#0A0C0F] font-bold border-t-2 border-slate-800 text-xs">
                               <tr>
                                 <td colSpan="2" className="py-3 px-3.5 text-slate-400">Exact Balance Equality</td>
-                                <td className="py-3 px-3 text-right font-mono text-sky-300 font-extrabold">₹{selectedDoc.proposal.total_debits.toFixed(2)}</td>
-                                <td className="py-3 px-3.5 text-right font-mono text-emerald-300 font-extrabold">₹{selectedDoc.proposal.total_credits.toFixed(2)}</td>
+                                <td className="py-3 px-3 text-right font-mono text-blue-300 font-semibold">₹{selectedDoc.proposal.total_debits.toFixed(2)}</td>
+                                <td className="py-3 px-3.5 text-right font-mono text-emerald-300 font-semibold">₹{selectedDoc.proposal.total_credits.toFixed(2)}</td>
                               </tr>
                             </tfoot>
                           </table>
                         </div>
 
                         {/* Applied Policies & Reasoning */}
-                        <div className="text-xs bg-[#050811] p-3.5 rounded-xl border border-slate-800 space-y-1.5">
+                        <div className="text-xs bg-[#0D1014] p-3.5 rounded-xl border border-slate-800 space-y-1.5">
                           <span className="font-bold text-slate-300 block text-[11px] uppercase tracking-wider">Applied Accounting Rules:</span>
                           <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-400">
                             {selectedDoc.proposal.applied_rules?.map((rule, idx) => (
@@ -1010,13 +986,13 @@ export default function App() {
 
                         {/* Deterministic Invariant & Compliance Gate Report */}
                         {selectedDoc.validation_report && (
-                          <div className="bg-[#050811] p-4 rounded-xl border border-slate-800 space-y-3">
+                          <div className="bg-[#0D1014] p-4 rounded-xl border border-slate-800 space-y-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2">
-                                <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                                <ShieldCheck className="w-4 h-4 text-blue-400" />
                                 <span className="font-bold text-slate-200 text-xs">Multi-Stage Invariant Verification</span>
                               </div>
-                              <span className={`px-2.5 py-0.5 text-[10px] font-extrabold rounded-full border ${
+                              <span className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-full border ${
                                 selectedDoc.validation_report.has_blocking_failures 
                                   ? 'bg-rose-500/10 text-rose-300 border-rose-500/40' 
                                   : selectedDoc.proposal?.requires_human_review 
@@ -1074,7 +1050,7 @@ export default function App() {
                                       )}
                                       <span>{check.check_name}</span>
                                     </div>
-                                    <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded font-extrabold">
+                                    <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded font-semibold">
                                       {check.status}
                                     </span>
                                   </div>
@@ -1096,7 +1072,7 @@ export default function App() {
                       {/* Approval Action */}
                       <div className="pt-4 border-t border-slate-800">
                         {editMode ? (
-                          <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-indigo-300 text-xs font-bold flex items-center justify-center space-x-2">
+                          <div className="p-3.5 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-300 text-xs font-bold flex items-center justify-center space-x-2">
                             <Pencil className="w-4 h-4 shrink-0" />
                             <span>Save or cancel your corrections before posting to the ledger.</span>
                           </div>
@@ -1114,7 +1090,7 @@ export default function App() {
                           <button
                             onClick={handlePostEntry}
                             disabled={loading}
-                            className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-600/20 transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.99]"
+                            className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-semibold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.99]"
                           >
                             <AlertTriangle className="w-4 h-4 text-slate-950" />
                             <span>{loading ? 'Posting...' : 'Review & Approve (Override Verification Gate)'}</span>
@@ -1123,7 +1099,7 @@ export default function App() {
                           <button
                             onClick={handlePostEntry}
                             disabled={loading}
-                            className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.99]"
+                            className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.99]"
                           >
                             <CheckCircle2 className="w-4 h-4 text-white" />
                             <span>{loading ? 'Posting...' : 'Approve & Post to General Ledger'}</span>
@@ -1144,17 +1120,17 @@ export default function App() {
 
         {/* TAB 3: GENERAL LEDGER */}
         {activeTab === 'ledger' && (
-          <div className="bg-[#0b0f19] rounded-2xl border border-slate-800/90 overflow-hidden shadow-xl">
-            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#080c15]">
+          <div className="bg-[#111418] rounded-xl border border-slate-800/90 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#0E1116]">
               <div>
-                <h2 className="text-sm font-extrabold text-white">General Ledger (Posted Double-Entry Journal)</h2>
+                <h2 className="text-sm font-semibold text-white">General Ledger (Posted Double-Entry Journal)</h2>
                 <p className="text-xs text-slate-400">Immutable, audited double-entry records with document provenance.</p>
               </div>
               <div className="flex items-center space-x-2">
                 <ExportButtons report="ledger" />
                 <button
                   onClick={() => window.open('/api/reports/export/tally', '_blank')}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 flex items-center space-x-1 cursor-pointer transition-colors"
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 flex items-center space-x-1 cursor-pointer transition-colors"
                   title="Download Tally Prime import XML"
                 >
                   <Download className="w-3 h-3" />
@@ -1177,7 +1153,7 @@ export default function App() {
                   <div key={entry.id} className="p-6 hover:bg-slate-800/30 transition-colors">
                     <div className="flex justify-between items-start mb-2.5">
                       <div>
-                        <span className="font-mono text-xs font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 px-2.5 py-1 rounded-md">
+                        <span className="font-mono text-xs font-bold text-blue-300 bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 rounded-md">
                           Invoice #{entry.invoice_number}
                         </span>
                         <span className="ml-3 text-xs text-slate-400 font-mono">Date: {entry.entry_date}</span>
@@ -1188,7 +1164,7 @@ export default function App() {
                     </div>
                     <p className="text-xs text-slate-300 italic mb-3.5 leading-relaxed">{entry.narration}</p>
 
-                    <div className="rounded-xl border border-slate-800 overflow-hidden bg-[#050811]">
+                    <div className="rounded-xl border border-slate-800 overflow-hidden bg-[#0D1014]">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-slate-900/90 text-slate-300 font-semibold border-b border-slate-800 text-[11px]">
                           <tr>
@@ -1203,7 +1179,7 @@ export default function App() {
                             <tr key={idx} className="hover:bg-slate-800/20">
                               <td className="py-2.5 px-3.5 text-slate-200 font-sans font-semibold">{l.account_name}</td>
                               <td className="py-2.5 px-2 text-slate-400 font-bold">{l.account_code}</td>
-                              <td className="py-2.5 px-3 text-right font-bold text-sky-400">
+                              <td className="py-2.5 px-3 text-right font-bold text-blue-400">
                                 {l.entry_type === 'DEBIT' ? l.amount.toFixed(2) : '—'}
                               </td>
                               <td className="py-2.5 px-3.5 text-right font-bold text-emerald-400">
@@ -1223,10 +1199,10 @@ export default function App() {
 
         {/* TAB 4: TRIAL BALANCE */}
         {activeTab === 'trial-balance' && (
-          <div className="bg-[#0b0f19] rounded-2xl border border-slate-800/90 overflow-hidden shadow-xl">
-            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#080c15]">
+          <div className="bg-[#111418] rounded-xl border border-slate-800/90 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#0E1116]">
               <div>
-                <h2 className="text-sm font-extrabold text-white">Authoritative Trial Balance</h2>
+                <h2 className="text-sm font-semibold text-white">Authoritative Trial Balance</h2>
                 <p className="text-xs text-slate-400">
                   Dynamically aggregated from posted double-entry journal lines as of {trialBalance?.as_of_date || 'Today'}.
                 </p>
@@ -1255,7 +1231,7 @@ export default function App() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#050811] text-slate-300 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
+                  <thead className="bg-[#0D1014] text-slate-300 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
                     <tr>
                       <th className="py-3 px-5">Account Code</th>
                       <th className="py-3 px-5">Account Name</th>
@@ -1270,7 +1246,7 @@ export default function App() {
                         <td className="py-2.5 px-5 text-slate-400 font-bold">{row.account_code}</td>
                         <td className="py-2.5 px-5 font-sans font-semibold text-slate-200">{row.account_name}</td>
                         <td className="py-2.5 px-4 font-sans text-slate-400 font-medium">{row.category}</td>
-                        <td className="py-2.5 px-4 text-right font-bold text-sky-400">
+                        <td className="py-2.5 px-4 text-right font-bold text-blue-400">
                           {row.balance_type === 'DEBIT' ? row.closing_balance.toFixed(2) : '—'}
                         </td>
                         <td className="py-2.5 px-5 text-right font-bold text-emerald-400">
@@ -1279,11 +1255,11 @@ export default function App() {
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-[#020617] font-bold border-t-2 border-slate-800 font-mono text-xs sm:text-sm">
+                  <tfoot className="bg-[#0A0C0F] font-bold border-t-2 border-slate-800 font-mono text-xs sm:text-sm">
                     <tr>
-                      <td colSpan="3" className="py-3 px-5 font-sans text-white font-extrabold">Total Balance Equality</td>
-                      <td className="py-3 px-4 text-right text-sky-300 font-extrabold">₹{trialBalance.total_debit_balance.toFixed(2)}</td>
-                      <td className="py-3 px-5 text-right text-emerald-300 font-extrabold">₹{trialBalance.total_credit_balance.toFixed(2)}</td>
+                      <td colSpan="3" className="py-3 px-5 font-sans text-white font-semibold">Total Balance Equality</td>
+                      <td className="py-3 px-4 text-right text-blue-300 font-semibold">₹{trialBalance.total_debit_balance.toFixed(2)}</td>
+                      <td className="py-3 px-5 text-right text-emerald-300 font-semibold">₹{trialBalance.total_credit_balance.toFixed(2)}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -1297,9 +1273,9 @@ export default function App() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             
             {/* Profit & Loss Statement */}
-            <div className="bg-[#0b0f19] rounded-2xl border border-slate-800/90 shadow-xl flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-slate-800 bg-[#080c15] flex justify-between items-center">
-                <h3 className="font-extrabold text-sm text-white">Statement of Profit & Loss</h3>
+            <div className="bg-[#111418] rounded-xl border border-slate-800/90 flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-slate-800 bg-[#0E1116] flex justify-between items-center">
+                <h3 className="font-semibold text-sm text-white">Statement of Profit & Loss</h3>
                 <div className="flex items-center space-x-3">
                   <span className="text-xs text-slate-400 font-mono">Period ending {profitAndLoss?.as_of_date || 'Current'}</span>
                   <ExportButtons report="profit-and-loss" />
@@ -1323,7 +1299,7 @@ export default function App() {
                       )}
                       <div className="flex justify-between pt-2.5 font-bold font-mono text-white text-xs">
                         <span>Total Revenue (A):</span>
-                        <span className="text-emerald-400 font-extrabold">₹{profitAndLoss.total_revenue.toFixed(2)}</span>
+                        <span className="text-emerald-400 font-semibold">₹{profitAndLoss.total_revenue.toFixed(2)}</span>
                       </div>
                     </div>
 
@@ -1341,14 +1317,14 @@ export default function App() {
                       )}
                       <div className="flex justify-between pt-2.5 font-bold font-mono text-white text-xs">
                         <span>Total Expenses (B):</span>
-                        <span className="text-rose-400 font-extrabold">₹{profitAndLoss.total_expenses.toFixed(2)}</span>
+                        <span className="text-rose-400 font-semibold">₹{profitAndLoss.total_expenses.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-3.5 bg-[#050811] border border-slate-800 rounded-xl flex justify-between items-center font-bold text-sm">
+                  <div className="p-3.5 bg-[#0D1014] border border-slate-800 rounded-xl flex justify-between items-center font-bold text-sm">
                     <span className="text-white">Net Operating Profit / (Loss):</span>
-                    <span className={profitAndLoss.net_profit >= 0 ? 'text-emerald-400 font-mono font-extrabold' : 'text-rose-400 font-mono font-extrabold'}>
+                    <span className={profitAndLoss.net_profit >= 0 ? 'text-emerald-400 font-mono font-semibold' : 'text-rose-400 font-mono font-semibold'}>
                       ₹{profitAndLoss.net_profit.toFixed(2)}
                     </span>
                   </div>
@@ -1359,9 +1335,9 @@ export default function App() {
             </div>
 
             {/* Balance Sheet */}
-            <div className="bg-[#0b0f19] rounded-2xl border border-slate-800/90 shadow-xl flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-slate-800 bg-[#080c15] flex justify-between items-center">
-                <h3 className="font-extrabold text-sm text-white">Balance Sheet</h3>
+            <div className="bg-[#111418] rounded-xl border border-slate-800/90 flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-slate-800 bg-[#0E1116] flex justify-between items-center">
+                <h3 className="font-semibold text-sm text-white">Balance Sheet</h3>
                 <div className="flex items-center space-x-3">
                   <span className="text-xs text-slate-400 font-mono">As of {balanceSheet?.as_of_date || 'Current'}</span>
                   <ExportButtons report="balance-sheet" />
@@ -1379,9 +1355,9 @@ export default function App() {
                           <span className="text-slate-200">₹{a.amount.toFixed(2)}</span>
                         </div>
                       ))}
-                      <div className="flex justify-between pt-2.5 font-bold font-mono text-sky-400 text-xs">
+                      <div className="flex justify-between pt-2.5 font-bold font-mono text-blue-400 text-xs">
                         <span>Total Assets:</span>
-                        <span className="font-extrabold">₹{balanceSheet.total_assets.toFixed(2)}</span>
+                        <span className="font-semibold">₹{balanceSheet.total_assets.toFixed(2)}</span>
                       </div>
                     </div>
 
@@ -1399,7 +1375,7 @@ export default function App() {
                       </div>
                       <div className="flex justify-between pt-2.5 font-bold font-mono text-emerald-400 text-xs">
                         <span>Total Liabilities & Equity:</span>
-                        <span className="font-extrabold">₹{balanceSheet.total_liabilities_and_equity.toFixed(2)}</span>
+                        <span className="font-semibold">₹{balanceSheet.total_liabilities_and_equity.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -1425,9 +1401,9 @@ export default function App() {
 
         {/* TAB 6: AUDIT TRAIL */}
         {activeTab === 'audit' && (
-          <div className="bg-[#0b0f19] rounded-2xl border border-slate-800/90 overflow-hidden shadow-xl">
-            <div className="px-6 py-4 border-b border-slate-800 bg-[#080c15]">
-              <h2 className="text-sm font-extrabold text-white">Immutable System Audit Trail</h2>
+          <div className="bg-[#111418] rounded-xl border border-slate-800/90 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800 bg-[#0E1116]">
+              <h2 className="text-sm font-semibold text-white">Immutable System Audit Trail</h2>
               <p className="text-xs text-slate-400">Every invoice upload, extraction, and ledger posting recorded with provenance.</p>
             </div>
 
@@ -1438,7 +1414,7 @@ export default function App() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#050811] text-slate-300 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
+                  <thead className="bg-[#0D1014] text-slate-300 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
                     <tr>
                       <th className="py-3 px-5">Timestamp (UTC)</th>
                       <th className="py-3 px-4">Action</th>
@@ -1451,7 +1427,7 @@ export default function App() {
                     {auditLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-slate-800/30">
                         <td className="py-2.5 px-5 text-slate-400 text-[11px]">{log.timestamp}</td>
-                        <td className="py-2.5 px-4 font-bold text-indigo-400">{log.action}</td>
+                        <td className="py-2.5 px-4 font-bold text-blue-400">{log.action}</td>
                         <td className="py-2.5 px-4 text-slate-300 font-sans font-semibold">{log.entity_name}</td>
                         <td className="py-2.5 px-4 font-sans text-slate-400">{log.performed_by}</td>
                         <td className="py-2.5 px-5 font-sans text-slate-200">{log.details}</td>
