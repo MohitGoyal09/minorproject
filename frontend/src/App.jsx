@@ -295,11 +295,15 @@ export default function App() {
     }
   };
 
-  const handlePostEntry = async () => {
-    if (!selectedDoc || !selectedDoc.proposal) return;
+  const handlePostEntry = async (approveWithWarnings = false) => {
+    if (!selectedDoc) return;
     setLoading(true);
     try {
-      const res = await axios.post('/api/journal/post', selectedDoc.proposal);
+      // The server rebuilds the journal from the stored invoice; we only name it.
+      const res = await axios.post('/api/journal/post', {
+        document_id: selectedDoc.id,
+        approve_with_warnings: approveWithWarnings,
+      });
       setActionMessage({ type: 'success', text: `Entry successfully posted to General Ledger! ID: ${res.data.journal_entry_id}` });
       await fetchDocuments();
       await handleSelectDocument(selectedDoc.id);
@@ -1130,7 +1134,7 @@ export default function App() {
                           </div>
                         ) : selectedDoc.proposal?.requires_human_review ? (
                           <button
-                            onClick={handlePostEntry}
+                            onClick={() => handlePostEntry(false)}
                             disabled={loading}
                             className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-semibold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.99]"
                           >
@@ -1139,7 +1143,7 @@ export default function App() {
                           </button>
                         ) : (
                           <button
-                            onClick={handlePostEntry}
+                            onClick={() => handlePostEntry(true)}
                             disabled={loading}
                             className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.99]"
                           >

@@ -57,6 +57,10 @@ class ItemClassificationRule:
         self.is_durable_asset = is_durable_asset
 
 
+class EmptyInvoiceError(ValueError):
+    """The document carries no postable value (no lines, or zero totals)."""
+
+
 class AccountingInterpreter:
     """
     Semantic interpretation engine converting extracted invoices into
@@ -275,6 +279,12 @@ class AccountingInterpreter:
         Interprets an ExtractedInvoice and constructs a balanced ProposedJournalEntry
         with full audit explanations and GST tax treatment.
         """
+
+        # Nothing to post: refuse early so no zero-amount line is ever built.
+        if invoice.subtotal <= Decimal("0.00") and invoice.grand_total <= Decimal("0.00"):
+            raise EmptyInvoiceError(
+                "No taxable value found: the document has no line items and a zero subtotal."
+            )
         lines: List[ProposedJournalLine] = []
         applied_rules: List[str] = []
         review_reasons: List[str] = []
@@ -307,12 +317,15 @@ class AccountingInterpreter:
 
         # Create Debit lines for base purchases
         for (code, name), amt in account_allocations.items():
+            amount = amt.quantize(Decimal("0.01"))
+            if amount <= Decimal("0.00"):
+                continue
             lines.append(
                 ProposedJournalLine(
                     account_code=code,
                     account_name=name,
                     entry_type=EntryType.DEBIT,
-                    amount=amt.quantize(Decimal("0.01")),
+                    amount=amount,
                     description=f"Taxable value for {name}"
                 )
             )
@@ -462,6 +475,11 @@ class AccountingInterpreter:
             review_reasons.append(f"Imbalance between Debits ({total_deb}) and Credits ({total_cred})")
 
         narration = f"Being purchase of goods/services from {invoice.vendor_name} vide invoice #{invoice.invoice_number} dated {invoice.invoice_date}"
+
+        if not any(line.entry_type == EntryType.DEBIT for line in lines):
+            raise EmptyInvoiceError(
+                "No taxable value found: the document has no line items and a zero subtotal."
+            )
 
         return ProposedJournalEntry(
             source_document_id=document_id,

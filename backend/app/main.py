@@ -25,7 +25,14 @@ from app.models.accounting import (
     User,
 )
 from app.db.seed_accounts import seed_standard_accounts
-from app.schemas.accounting import ProposedJournalEntry, ProposedJournalLine, EntryType
+from app.schemas.accounting import (
+    DocumentValidationReport,
+    ProposedJournalEntry,
+    ProposedJournalLine,
+    EntryType,
+    ValidationCheckResult,
+    ValidationCheckStatus,
+)
 from app.schemas.invoice import (
     ExtractedInvoice,
     ExtractionConfidence,
@@ -33,7 +40,7 @@ from app.schemas.invoice import (
     InvoiceLineItem as InvoiceLineItemSchema,
 )
 from app.engine.ingestion import DocumentIngestionService
-from app.engine.interpreter import AccountingInterpreter
+from app.engine.interpreter import AccountingInterpreter, EmptyInvoiceError
 from app.engine.invariants import run_comprehensive_validation
 from app.engine.ledger import post_journal_entry, generate_trial_balance
 from app.engine.statements import FinancialStatementService
@@ -44,6 +51,17 @@ from pydantic import BaseModel
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+
+class PostJournalRequest(BaseModel):
+    """The client names the document; the server owns the journal.
+
+    Journal lines are never accepted from the client: they are rebuilt from the
+    stored invoice, so a fabricated or edited entry cannot reach the ledger.
+    """
+
+    document_id: str
+    approve_with_warnings: bool = False
 
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
@@ -174,12 +192,35 @@ def _persist_invoice(db: Session, doc: Document, tenant: Tenant, extracted: Extr
     return db_invoice
 
 
+def _is_duplicate(db: Session, tenant: Tenant, extracted: ExtractedInvoice) -> bool:
+    from app.engine.ledger import find_duplicate_entry
+
+    return find_duplicate_entry(db, tenant.id, extracted.invoice_number, extracted) is not None
+
+
 def _proposal_and_validation(db: Session, tenant: Tenant, extracted: ExtractedInvoice, document_id: str):
-    proposal = AccountingInterpreter.interpret_invoice(
-        invoice=extracted,
-        document_id=document_id,
-        creditor_account_code="2010",
-    )
+    try:
+        proposal = AccountingInterpreter.interpret_invoice(
+            invoice=extracted,
+            document_id=document_id,
+            creditor_account_code="2010",
+        )
+    except EmptyInvoiceError as exc:
+        empty_report = DocumentValidationReport(
+            is_valid=False,
+            can_post_automatically=False,
+            has_blocking_failures=True,
+            checks=[ValidationCheckResult(
+                check_name="Invoice Content",
+                status=ValidationCheckStatus.FAIL,
+                expected_value="At least one line with a positive taxable value",
+                actual_value="No taxable value",
+                explanation=str(exc),
+                requires_human_review=True,
+            )],
+            summary_message="No taxable value. Add or correct line items before posting.",
+        )
+        return None, empty_report
     active_codes = {
         account.code
         for account in db.query(Account).filter(Account.tenant_id == tenant.id, Account.is_active == True).all()
@@ -188,6 +229,7 @@ def _proposal_and_validation(db: Session, tenant: Tenant, extracted: ExtractedIn
         invoice=extracted,
         entry=proposal,
         active_account_codes=active_codes,
+        is_duplicate=_is_duplicate(db, tenant, extracted),
     )
     proposal.validation_report = report
     return proposal, report
@@ -345,6 +387,14 @@ def process_document(doc_id: str, db: Session = Depends(get_db)):
     doc = db.query(Document).filter(Document.id == doc_id, Document.tenant_id == tenant.id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
+    if doc.status == DocumentStatus.POSTED or db.query(JournalEntry).filter(
+        JournalEntry.document_id == doc.id,
+        JournalEntry.status == EntryPostingStatus.POSTED,
+    ).first():
+        raise HTTPException(
+            status_code=409,
+            detail="This document is posted. Posted entries are immutable; raise a reversing entry instead.",
+        )
 
     # 1. Run Ingestion, Table Layout Correction & Heuristics
     try:
@@ -358,9 +408,22 @@ def process_document(doc_id: str, db: Session = Depends(get_db)):
     _persist_invoice(db, doc, tenant, extracted)
 
     # 3. Interpret Transaction, Generate Journal Proposal & Validate
-    proposal, validation_report = _proposal_and_validation(db, tenant, extracted, doc.id)
+    try:
+        proposal, validation_report = _proposal_and_validation(db, tenant, extracted, doc.id)
+    except Exception as exc:
+        # A document with no taxable value cannot produce a journal entry.
+        doc.status = DocumentStatus.REVIEW_REQUIRED
+        db.commit()
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invoice has no postable value (no lines or zero totals): {exc}",
+        )
+
     _apply_document_status(doc, validation_report)
     db.commit()
+
+    if proposal is None:
+        raise HTTPException(status_code=422, detail=validation_report.summary_message)
 
     return {
         "status": doc.status,
@@ -388,8 +451,13 @@ def get_document_details(doc_id: str, db: Session = Depends(get_db)):
         # Rebuild the proposal from the stored (possibly corrected) invoice.
         extracted_obj = _extracted_invoice_from_db(inv)
         proposal, validation_report = _proposal_and_validation(db, tenant, extracted_obj, doc.id)
-        proposal_data = proposal.model_dump()
+        proposal_data = proposal.model_dump() if proposal is not None else None
         validation_data = validation_report.model_dump()
+
+        # The stored status must agree with the report returned right now.
+        if doc.status not in (DocumentStatus.POSTED, DocumentStatus.REJECTED):
+            _apply_document_status(doc, validation_report)
+            db.commit()
 
     return {
         "id": doc.id,
@@ -429,8 +497,19 @@ def correct_invoice(doc_id: str, correction: InvoiceCorrectionRequest, db: Sessi
     )
 
     db_invoice = _persist_invoice(db, doc, tenant, extracted)
-    proposal, validation_report = _proposal_and_validation(db, tenant, extracted, doc.id)
+    try:
+        proposal, validation_report = _proposal_and_validation(db, tenant, extracted, doc.id)
+    except Exception as exc:
+        db.commit()
+        raise HTTPException(
+            status_code=422,
+            detail=f"These values cannot produce a journal entry: {exc}",
+        )
     _apply_document_status(doc, validation_report)
+
+    if proposal is None:
+        db.commit()
+        raise HTTPException(status_code=422, detail=validation_report.summary_message)
 
     db.add(AuditLog(
         tenant_id=tenant.id,
@@ -458,21 +537,72 @@ def correct_invoice(doc_id: str, correction: InvoiceCorrectionRequest, db: Sessi
 
 
 @protected_router.post("/journal/post")
-def post_entry(proposal: ProposedJournalEntry, db: Session = Depends(get_db)):
-    tenant = get_or_create_default_tenant(db)
-    try:
-        posted = post_journal_entry(db, tenant.id, proposal, posted_by="USER_REVIEWER", allow_review_override=True)
-        
-        # Update linked document status
-        if proposal.source_document_id:
-            doc = db.query(Document).filter(Document.id == proposal.source_document_id).first()
-            if doc:
-                doc.status = DocumentStatus.POSTED
-                db.commit()
+def post_entry(
+    request: PostJournalRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Post the server-rebuilt proposal for a stored document.
 
-        return {"status": "SUCCESS", "journal_entry_id": posted.id, "invoice_number": posted.invoice_number}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    The ledger is written from the invoice in the database, never from lines the
+    client sends back, so a fabricated entry cannot be posted.
+    """
+    tenant = get_or_create_default_tenant(db)
+    doc = (
+        db.query(Document)
+        .filter(Document.id == request.document_id, Document.tenant_id == tenant.id)
+        .first()
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if doc.status == DocumentStatus.POSTED:
+        raise HTTPException(status_code=409, detail="This document is already posted; posted entries are immutable.")
+    if not doc.invoice:
+        raise HTTPException(status_code=409, detail="This document has no stored invoice. Process it before posting.")
+
+    extracted = _extracted_invoice_from_db(doc.invoice)
+    try:
+        proposal, report = _proposal_and_validation(db, tenant, extracted, doc.id)
+    except Exception as exc:
+        doc.status = DocumentStatus.REVIEW_REQUIRED
+        db.commit()
+        raise HTTPException(status_code=422, detail=f"Cannot build a journal entry for this document: {exc}")
+
+    if proposal is None:
+        raise HTTPException(status_code=409, detail=report.summary_message)
+
+    if report.has_blocking_failures:
+        failing = [c.check_name for c in report.checks if c.status.value == "FAIL"]
+        raise HTTPException(
+            status_code=409,
+            detail=f"Posting blocked by validation: {', '.join(failing)}",
+        )
+    if not report.can_post_automatically and not request.approve_with_warnings:
+        raise HTTPException(
+            status_code=409,
+            detail="This entry needs reviewer approval. Resend with approve_with_warnings=true after checking it.",
+        )
+
+    try:
+        posted = post_journal_entry(
+            db,
+            tenant.id,
+            proposal,
+            posted_by=current_user.email,
+            allow_review_override=request.approve_with_warnings,
+            invoice=extracted,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+    doc.status = DocumentStatus.POSTED
+    db.commit()
+
+    return {
+        "status": "SUCCESS",
+        "journal_entry_id": posted.id,
+        "invoice_number": posted.invoice_number,
+    }
 
 
 @protected_router.get("/reports/ledger")

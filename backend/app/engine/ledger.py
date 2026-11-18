@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 from datetime import date, datetime, timezone
 from typing import List, Dict, Optional
@@ -19,6 +20,7 @@ from app.schemas.accounting import (
     NormalBalance,
     ValidationCheckStatus,
 )
+from app.schemas.invoice import ExtractedInvoice
 from app.schemas.reports import LedgerAccountBalance, TrialBalanceReport
 from app.engine.invariants import (
     validate_double_entry_invariants,
@@ -29,12 +31,54 @@ from app.engine.invariants import (
 )
 
 
+def normalise_invoice_number(value: str) -> str:
+    """Case and whitespace are not part of an invoice number's identity."""
+    return re.sub(r"\s+", "", (value or "")).upper()
+
+
+def supplier_identity(invoice: ExtractedInvoice) -> str:
+    """GSTIN identifies a supplier; fall back to a normalised name."""
+    return (invoice.vendor_gstin or invoice.vendor_name or "").strip().upper()
+
+
+def find_duplicate_entry(
+    db: Session,
+    tenant_id: str,
+    invoice_number: str,
+    invoice: Optional[ExtractedInvoice] = None,
+) -> Optional[JournalEntry]:
+    """A duplicate is the same supplier issuing the same invoice number again.
+
+    Cross-vendor reuse of INV-001 is legitimate. When the supplier is unknown on
+    either side, fall back to number-only matching rather than allowing a
+    possible double post.
+    """
+    target = normalise_invoice_number(invoice_number)
+    posted = (
+        db.query(JournalEntry)
+        .filter(
+            JournalEntry.tenant_id == tenant_id,
+            JournalEntry.status == EntryPostingStatus.POSTED,
+        )
+        .all()
+    )
+    for entry in posted:
+        if normalise_invoice_number(entry.invoice_number) != target:
+            continue
+        if invoice is None or entry.document is None or entry.document.invoice is None:
+            return entry
+        if supplier_identity(entry.document.invoice) == supplier_identity(invoice):
+            return entry
+    return None
+
+
 def post_journal_entry(
     db: Session,
     tenant_id: str,
     proposal: ProposedJournalEntry,
     posted_by: str = "SYSTEM_AUTOMATION",
-    allow_review_override: bool = False
+    allow_review_override: bool = False,
+    invoice: Optional[ExtractedInvoice] = None,
 ) -> JournalEntry:
     """
     Atomically posts a validated journal entry into the authoritative ledger.
@@ -45,16 +89,8 @@ def post_journal_entry(
     4. Non-negative amounts.
     5. Human approval verification if review is required.
     """
-    # 1. Duplicate Invoice Posting Prevention
-    existing_entry = (
-        db.query(JournalEntry)
-        .filter(
-            JournalEntry.tenant_id == tenant_id,
-            JournalEntry.invoice_number == proposal.invoice_number,
-            JournalEntry.status == EntryPostingStatus.POSTED
-        )
-        .first()
-    )
+    # 1. Duplicate Invoice Posting Prevention (supplier + normalised number)
+    existing_entry = find_duplicate_entry(db, tenant_id, proposal.invoice_number, invoice)
     if existing_entry:
         raise DuplicateInvoiceViolation(
             f"Duplicate Posting Blocked: Invoice #{proposal.invoice_number} has already been posted to the ledger (Entry ID: {existing_entry.id})."
@@ -67,7 +103,8 @@ def post_journal_entry(
 
     checks = validate_journal_invariants_detailed(
         entry=proposal,
-        active_account_codes=active_codes
+        active_account_codes=active_codes,
+        invoice=invoice,
     )
 
     failures = [c.explanation for c in checks if c.status == ValidationCheckStatus.FAIL]

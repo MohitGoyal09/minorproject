@@ -464,7 +464,13 @@ def validate_journal_invariants_detailed(
     # 6. Reconcile Journal Payable against Source Invoice Grand Total
     # A journal can balance at 60,000 when invoice was 50,000! We must reconcile against source doc.
     if invoice is not None:
-        payable_lines = [l for l in entry.lines if l.entry_type == EntryType.CREDIT and l.account_code == "2010"]
+        # Credit purchase settles to creditors (2010); a cash or bank purchase
+        # settles to cash/bank (1010/1020). All three are settlement accounts.
+        SETTLEMENT_ACCOUNTS = {"2010", "1010", "1020"}
+        payable_lines = [
+            l for l in entry.lines
+            if l.entry_type == EntryType.CREDIT and l.account_code in SETTLEMENT_ACCOUNTS
+        ]
         total_payable = sum((l.amount for l in payable_lines), start=Decimal("0.00")).quantize(Decimal("0.01"))
         
         diff_invoice = abs(total_payable - invoice.grand_total)

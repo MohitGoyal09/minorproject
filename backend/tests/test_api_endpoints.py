@@ -57,7 +57,7 @@ def test_api_end_to_end_invoice_flow(client):
     assert proposal["is_balanced"] is True
 
     # 3. Post the proposed journal entry
-    post_res = client.post("/api/journal/post", json=proposal)
+    post_res = client.post("/api/journal/post", json={"document_id": doc_id})
     assert post_res.status_code == 200
     assert post_res.json()["status"] == "SUCCESS"
 

@@ -111,7 +111,7 @@ def test_inconsistent_correction_keeps_the_posting_gate_closed(client):
 
 def test_posted_invoice_cannot_be_edited(client):
     document_id, processed = upload_and_process(client)
-    posted = client.post("/api/journal/post", json=processed["proposed_journal_entry"])
+    posted = client.post("/api/journal/post", json={"document_id": document_id})
     assert posted.status_code == 200
 
     updated = client.put(
@@ -180,8 +180,8 @@ def test_corrections_are_recorded_in_the_audit_trail(client):
 # --- exports --------------------------------------------------------------
 
 def test_export_ledger_as_csv(client):
-    _, processed = upload_and_process(client)
-    client.post("/api/journal/post", json=processed["proposed_journal_entry"])
+    document_id, processed = upload_and_process(client)
+    client.post("/api/journal/post", json={"document_id": document_id})
 
     response = client.get("/api/reports/export/ledger?format=csv")
 
@@ -194,8 +194,8 @@ def test_export_ledger_as_csv(client):
 
 
 def test_export_trial_balance_as_excel(client):
-    _, processed = upload_and_process(client)
-    client.post("/api/journal/post", json=processed["proposed_journal_entry"])
+    document_id, processed = upload_and_process(client)
+    client.post("/api/journal/post", json={"document_id": document_id})
 
     response = client.get("/api/reports/export/trial-balance?format=xlsx")
 
@@ -205,8 +205,8 @@ def test_export_trial_balance_as_excel(client):
 
 
 def test_export_financial_statements(client):
-    _, processed = upload_and_process(client)
-    client.post("/api/journal/post", json=processed["proposed_journal_entry"])
+    document_id, processed = upload_and_process(client)
+    client.post("/api/journal/post", json={"document_id": document_id})
 
     for report in ("profit-and-loss", "balance-sheet"):
         response = client.get(f"/api/reports/export/{report}?format=csv")
@@ -215,8 +215,8 @@ def test_export_financial_statements(client):
 
 
 def test_export_journal_as_tally_xml(client):
-    _, processed = upload_and_process(client)
-    client.post("/api/journal/post", json=processed["proposed_journal_entry"])
+    document_id, processed = upload_and_process(client)
+    client.post("/api/journal/post", json={"document_id": document_id})
 
     response = client.get("/api/reports/export/tally")
 
