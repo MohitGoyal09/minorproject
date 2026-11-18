@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  FileText, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, 
-  BookOpen, Scale, PieChart, History, Upload, RefreshCw, Sparkles,
-  Layers, Landmark, XCircle, Info, ShieldAlert, Building2,
-  TrendingUp, Check, ChevronRight, SlidersHorizontal, Pencil, Save, X, Download,
-  FileSpreadsheet, LogOut
+  FileText, CheckCircle2, AlertTriangle, ShieldCheck, 
+  BookOpen, Scale, PieChart, History, Upload, RefreshCw, Landmark, XCircle,
+  ChevronRight, Pencil, Save, X, Download,
+  FileSpreadsheet
 } from 'lucide-react';
 
 // Empty in development so Vite proxies /api to the local backend.
@@ -422,188 +421,187 @@ export default function App() {
     return <LoginScreen onSubmit={handleLogin} error={loginError} busy={loggingIn} />;
   }
 
+  const tabs = [
+    { id: 'invoices', label: 'Invoices', icon: FileText, count: totalInvoices },
+    { id: 'review', label: 'Review', icon: ShieldCheck, attention: reviewCount },
+    { id: 'ledger', label: 'Ledger', icon: BookOpen },
+    { id: 'trial-balance', label: 'Trial balance', icon: Scale },
+    { id: 'statements', label: 'Statements', icon: PieChart },
+    { id: 'audit', label: 'Audit trail', icon: History },
+  ];
+
+  const pageMeta = {
+    invoices: ['Invoices', 'Upload supplier invoices and watch them clear extraction.'],
+    review: ['Review', 'Check the extraction, then approve or correct the proposed entry.'],
+    ledger: ['Ledger', 'Posted double-entry records, immutable once written.'],
+    'trial-balance': ['Trial balance', 'Balances derived from posted journal lines.'],
+    statements: ['Statements', 'Profit and loss, and the balance sheet.'],
+    audit: ['Audit trail', 'Ingestions, corrections, postings, and sign-ins.'],
+  };
+
   return (
     <div className="min-h-screen bg-[#F5F6F8] text-slate-900 flex flex-col font-sans selection:bg-blue-700 selection:text-white antialiased">
       
-      {/* Top Header */}
-      <header className="bg-[#FFFFFF]/90 border-b border-slate-200 sticky top-0 z-50 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white">
-              <Landmark className="w-5 h-5" />
+      <div className="flex">
+
+        {/* Sidebar: the workflow order is the navigation */}
+        <aside className="hidden lg:flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white sticky top-0 h-screen">
+          <div className="h-14 flex items-center gap-2.5 px-4 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white">
+              <Landmark className="w-4 h-4" />
             </div>
-            <div>
-              <div className="flex items-center space-x-2.5">
-                <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                  Invoice-to-Accounting OS
-                </h1>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium">
-                GST-compliant double-entry accounting
-              </p>
+            <div className="leading-tight">
+              <p className="text-[13px] font-semibold text-slate-900">Invoice to Books</p>
+              <p className="text-[10px] text-slate-500">GST double-entry</p>
             </div>
           </div>
 
-          {tenant && (
-            <div className="flex items-center space-x-4">
-              <div className="text-right hidden sm:block">
-                <span className="text-xs font-semibold text-slate-800 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
-                  {tenant.name}
-                </span>
-                <p className="text-[11px] text-slate-500 mt-1 font-mono">
-                  GSTIN: <span className="text-slate-700 font-semibold">{tenant.gstin}</span> ({tenant.currency})
-                </p>
-              </div>
-              <div className="h-8 w-px bg-slate-100 hidden sm:block"></div>
-              <div className="flex items-center space-x-2 text-[11px] font-medium text-slate-500">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80"></span>
-                <span>Ledger sealed</span>
-              </div>
-              <div className="h-8 w-px bg-slate-100 hidden sm:block"></div>
-              <div className="flex items-center space-x-2">
-                <span className="text-[11px] text-slate-500 font-mono hidden md:inline">{user?.email}</span>
+          <nav className="flex-1 px-2 py-3 space-y-0.5">
+            {tabs.map((tab, index) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
                 <button
-                  onClick={handleLogout}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center space-x-1 cursor-pointer transition-colors"
-                  title="Sign out"
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors cursor-pointer ${
+                    isActive
+                      ? 'bg-slate-100 text-slate-900 font-semibold'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
                 >
-                  <LogOut className="w-3 h-3" />
-                  <span>Sign out</span>
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <span className="flex-1 text-left truncate">{index + 1}. {tab.label}</span>
+                  {tab.count > 0 && (
+                    <span className="text-[10px] font-mono text-slate-500">{tab.count}</span>
+                  )}
+                  {tab.attention > 0 && (
+                    <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5">
+                      {tab.attention}
+                    </span>
+                  )}
                 </button>
+              );
+            })}
+          </nav>
+
+          <div className="border-t border-slate-100 px-4 py-3 space-y-2">
+            {tenant && (
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium text-slate-900 truncate">{tenant.name}</p>
+                <p className="text-[10px] font-mono text-slate-500">{tenant.gstin}</p>
               </div>
+            )}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-slate-500 truncate">{user?.email}</span>
+              <button
+                onClick={handleLogout}
+                className="text-[10px] font-medium text-slate-600 hover:text-slate-900 cursor-pointer shrink-0"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <div className="flex-1 min-w-0 flex flex-col">
+
+          {/* Small screens keep a compact top nav */}
+          <header className="lg:hidden sticky top-0 z-50 bg-white border-b border-slate-200">
+            <div className="h-12 px-4 flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-slate-900">Invoice to Books</span>
+              <button onClick={handleLogout} className="text-[11px] text-slate-600 cursor-pointer">Sign out</button>
+            </div>
+            <div className="flex overflow-x-auto border-t border-slate-100">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`px-3 py-2 text-[11px] whitespace-nowrap border-b-2 cursor-pointer ${
+                    activeTab === tab.id
+                      ? 'border-blue-600 text-slate-900 font-semibold'
+                      : 'border-transparent text-slate-500'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </header>
+
+          {/* Global Alerts */}
+          {actionMessage && (
+            <div className={`px-6 py-2 text-xs font-medium border-b flex items-center gap-3 ${
+              actionMessage.type === 'success'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : 'bg-rose-50 text-rose-800 border-rose-200'
+            }`}>
+              <span className="flex-1">{actionMessage.text}</span>
+              <button onClick={() => setActionMessage(null)} className="font-semibold text-slate-500 hover:text-slate-900 cursor-pointer">Dismiss</button>
             </div>
           )}
-        </div>
 
-        {/* Navigation Tabs */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 border-t border-slate-200 overflow-x-auto scrollbar-none">
-          {[
-            { id: 'invoices', label: '1. Invoices & Ingestion', icon: FileText, count: totalInvoices },
-            { id: 'review', label: '2. Review & Invariant Gate', icon: ShieldCheck, badge: reviewCount > 0 ? `${reviewCount} Attention` : null, badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' },
-            { id: 'ledger', label: '3. General Ledger', icon: BookOpen },
-            { id: 'trial-balance', label: '4. Trial Balance', icon: Scale },
-            { id: 'statements', label: '5. Financial Statements', icon: PieChart },
-            { id: 'audit', label: '6. Audit Trail', icon: History },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`flex items-center space-x-2 py-3 px-3.5 border-b-2 font-medium text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer ${
-                  isActive
-                    ? 'border-blue-500 text-blue-700 font-bold bg-blue-50/70'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-blue-700' : 'text-slate-500'}`} />
-                <span>{tab.label}</span>
-                {tab.count !== undefined && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                    {tab.count}
-                  </span>
-                )}
-                {tab.badge && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tab.badgeColor}`}>
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </header>
+          <main className="flex-1 w-full max-w-[1360px] mx-auto px-5 sm:px-7 py-6 space-y-5">
 
-      {/* Global Alerts */}
-      {actionMessage && (
-        <div className={`py-2.5 px-4 text-xs font-semibold text-center border-b transition-all flex items-center justify-center space-x-2 ${
-          actionMessage.type === 'success' 
-            ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
-            : 'bg-rose-50 text-rose-800 border-rose-200'
-        }`}>
-          <span>{actionMessage.text}</span>
-          <button onClick={() => setActionMessage(null)} className="ml-3 font-bold text-slate-500 hover:text-slate-900 cursor-pointer px-1">✕</button>
-        </div>
-      )}
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+            {/* Page header */}
+            <div className="pb-4 border-b border-slate-200">
+              <h1 className="text-xl font-semibold tracking-tight text-slate-900">{pageMeta[activeTab][0]}</h1>
+              <p className="text-[13px] text-slate-500 mt-0.5">{pageMeta[activeTab][1]}</p>
+            </div>
         
         {/* TAB 1: INVOICES & INGESTION */}
         {activeTab === 'invoices' && (
           <div className="space-y-6">
             
-            {/* KPI Metric Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#FFFFFF] p-4 rounded-xl border border-slate-200">
-                <span className="text-slate-500 text-xs font-medium block">Total invoices</span>
-                <p className="text-3xl font-bold text-slate-900 font-mono mt-1.5 tabular-nums">{totalInvoices}</p>
-                <p className="text-[11px] text-slate-500 mt-1">Digital and OCR</p>
+            {/* Summary line and the one primary action */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-slate-600">
+                <span><span className="font-semibold text-slate-900 tabular-nums">{totalInvoices}</span> invoices</span>
+                <span className="hidden sm:block w-px h-3.5 bg-slate-200"></span>
+                <span><span className="font-semibold text-slate-900 tabular-nums">{postedCount}</span> posted</span>
+                <span className="hidden sm:block w-px h-3.5 bg-slate-200"></span>
+                <span className={reviewCount > 0 ? 'text-amber-700 font-medium' : ''}>
+                  <span className="font-semibold tabular-nums">{reviewCount}</span> awaiting review
+                </span>
+                <span className="hidden sm:block w-px h-3.5 bg-slate-200"></span>
+                <span className="font-mono tabular-nums text-slate-700">
+                  ₹{totalPayableVolume.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
               </div>
 
-              <div className="bg-[#FFFFFF] p-4 rounded-xl border border-slate-200">
-                <span className="text-slate-500 text-xs font-medium block">Posted to ledger</span>
-                <p className="text-3xl font-bold text-slate-900 font-mono mt-1.5 tabular-nums">{postedCount}</p>
-                <p className="text-[11px] text-slate-500 mt-1">Audited and reconciled</p>
-              </div>
-
-              <div className="bg-[#FFFFFF] p-4 rounded-xl border border-slate-200">
-                <span className="text-slate-500 text-xs font-medium block">Awaiting review</span>
-                <p className={`text-2xl font-semibold font-mono mt-1.5 tabular-nums ${reviewCount > 0 ? 'text-amber-700' : 'text-slate-900'}`}>{reviewCount}</p>
-                <p className="text-[11px] text-slate-500 mt-1">Threshold or tax flags</p>
-              </div>
-
-              <div className="bg-[#FFFFFF] p-4 rounded-xl border border-slate-200">
-                <span className="text-slate-500 text-xs font-medium block">Volume ingested</span>
-                <p className="text-3xl font-bold text-slate-900 font-mono mt-1.5 tabular-nums">₹{totalPayableVolume.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                <p className="text-[11px] text-slate-500 mt-1">GST verified</p>
-              </div>
+              <label className={`inline-flex items-center px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors ${
+                uploadProgress ? 'bg-blue-400 text-white cursor-wait' : 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer active:scale-[0.99]'
+              }`}>
+                <Upload className="w-3.5 h-3.5 mr-2" />
+                <span>
+                  {uploadProgress
+                    ? `Processing ${uploadProgress.done} of ${uploadProgress.total}...`
+                    : 'Upload PDFs'}
+                </span>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  multiple
+                  disabled={!!uploadProgress}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
             </div>
 
-            {/* Upload Area */}
-            <div className="bg-[#FFFFFF] p-6 sm:p-8 rounded-xl border-2 border-dashed border-slate-200 hover:border-blue-500/60 transition-colors text-center">
-              <div className="w-11 h-11 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 mx-auto mb-3">
-                <Upload className="w-5 h-5" />
+            {/* Empty state only when there is nothing to show */}
+            {documents.length === 0 && (
+              <div className="border border-dashed border-slate-300 rounded-lg px-6 py-12 text-center">
+                <p className="text-sm font-medium text-slate-900">No invoices yet</p>
+                <p className="text-[13px] text-slate-500 mt-1.5 max-w-md mx-auto leading-relaxed">
+                  Upload one or several PDFs. Digital files are read from their text layer; scans and photographs go through OCR and arrive flagged for review.
+                </p>
               </div>
-              <h3 className="text-base font-semibold text-slate-900">Upload invoice PDFs</h3>
-              <p className="text-xs text-slate-500 max-w-lg mx-auto mt-1.5 mb-5 leading-relaxed">
-                Digital PDFs are read from their text layer. Scans and photographs go through OCR and are marked for review before posting.
-              </p>
-              
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <label className={`inline-flex items-center px-4 py-2 text-xs font-semibold rounded-lg transition-colors ${
-                  uploadProgress ? 'bg-blue-400 text-white cursor-wait' : 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer active:scale-[0.99]'
-                }`}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  <span>
-                    {uploadProgress
-                      ? `Processing ${uploadProgress.done} of ${uploadProgress.total}...`
-                      : 'Select PDFs'}
-                  </span>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    multiple
-                    disabled={!!uploadProgress}
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              <p className="text-[11px] text-slate-400 mt-3">
-                Select one or several PDFs at once. Each is extracted and validated in turn.
-              </p>
-            </div>
+            )}
 
             {/* Invoices List */}
             <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-[#FAFBFC]">
-                <div>
-                  <h2 className="font-semibold text-slate-900 text-sm tracking-wide">Document Ingestion Pipeline</h2>
-                  <p className="text-xs text-slate-500">Processed invoices available for audit, invariant verification, and accounting review</p>
-                </div>
-
                 <div className="flex items-center space-x-2">
                   <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 text-xs font-medium">
                     {['ALL', 'REVIEW_REQUIRED', 'PROCESSED', 'POSTED'].map((st) => (
@@ -721,7 +719,7 @@ export default function App() {
                     <div>
                       <h2 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
                         <FileText className="w-4 h-4 text-blue-700" />
-                        <span>Extracted Document Intelligence</span>
+                        <span>Extracted invoice</span>
                       </h2>
                       <p className="text-[11px] text-slate-500 font-mono truncate max-w-xs">{selectedDoc.filename}</p>
                     </div>
@@ -769,9 +767,9 @@ export default function App() {
                   </div>
 
                   {selectedDoc.invoice ? (
-                    <div className="p-5 space-y-5 flex-1">
+                    <div className="p-5 space-y-5 flex-1 flex flex-col">
                       {/* Metadata Grid */}
-                      <div className="grid grid-cols-2 gap-3 bg-[#F7F8FA] p-3.5 rounded-xl border border-slate-200 text-xs">
+                      <div className="grid grid-cols-2 gap-4 text-xs">
                         <div>
                           <span className="text-slate-500 block text-[11px] font-medium">Invoice Number</span>
                           {editMode ? (
@@ -840,15 +838,15 @@ export default function App() {
                       {/* Reconstructed Line Items Table */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
-                          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                            Reconstructed Line Items (Yao et al. Corrected)
+                          <h4 className="text-xs font-semibold text-slate-900">
+                            Line items
                           </h4>
                           <span className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded font-mono">
-                            {selectedDoc.invoice.line_items.length} Items Captured
+                            {selectedDoc.invoice.line_items.length} items
                           </span>
                         </div>
 
-                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-[#F7F8FA]">
+                        <div className="border-y border-slate-200">
                           <table className="w-full text-left text-xs">
                             <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 text-[11px]">
                               <tr>
@@ -901,7 +899,7 @@ export default function App() {
                       </div>
 
                       {/* Totals Summary */}
-                      <div className="bg-[#F7F8FA] p-4 rounded-xl border border-slate-200 text-xs space-y-1.5 font-mono">
+                      <div className="border-t border-slate-200 pt-4 text-xs space-y-1.5 font-mono">
                         <div className="flex justify-between items-center font-sans gap-3">
                           <span className="text-slate-500">Taxable Subtotal:</span>
                           {editMode
@@ -933,6 +931,90 @@ export default function App() {
                           </p>
                         )}
                       </div>
+
+                      {/* Deterministic Invariant & Compliance Gate Report */}
+                      {selectedDoc.validation_report && (
+                        <div className="border-t border-slate-200 pt-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <ShieldCheck className="w-4 h-4 text-blue-700" />
+                              <span className="font-semibold text-slate-900 text-xs">Checks</span>
+                            </div>
+                            <span className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-full border ${
+                              selectedDoc.validation_report.has_blocking_failures 
+                                ? 'bg-rose-50 text-rose-700 border-rose-300' 
+                                : selectedDoc.proposal?.requires_human_review 
+                                  ? 'bg-amber-50 text-amber-700 border-amber-300' 
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-500/40'
+                            }`}>
+                              {selectedDoc.validation_report.has_blocking_failures 
+                                ? 'POSTING BLOCKED' 
+                                : selectedDoc.proposal?.requires_human_review 
+                                  ? 'HUMAN REVIEW REQUIRED' 
+                                  : 'GATE PASSED (AUTO-POSTABLE)'}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-slate-700 font-medium">
+                            {selectedDoc.validation_report.summary_message}
+                          </p>
+
+                          {/* Review Reasons Callout */}
+                          {selectedDoc.proposal?.requires_human_review && selectedDoc.proposal.review_reasons?.length > 0 && (
+                            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-[11px] space-y-1">
+                              <div className="font-bold flex items-center space-x-1.5 text-amber-800">
+                                <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-700" />
+                                <span>Needs attention:</span>
+                              </div>
+                              <ul className="list-disc list-inside space-y-0.5 text-amber-800 pl-1 leading-relaxed">
+                                {selectedDoc.proposal.review_reasons.map((r, i) => (
+                                  <li key={i}>{r}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Detailed Invariant Checks */}
+                          <div className="divide-y divide-slate-100">
+                            {selectedDoc.validation_report.checks?.map((check, idx) => (
+                              <div 
+                                key={idx} 
+                                className={`py-2.5 text-[11px] flex flex-col gap-1 ${
+                                  check.status === 'FAIL'
+                                    ? 'text-rose-700'
+                                    : check.status === 'WARNING'
+                                      ? 'text-amber-700'
+                                      : 'text-slate-700'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-1.5 font-semibold text-slate-800">
+                                    {check.status === 'FAIL' ? (
+                                      <XCircle className="w-3.5 h-3.5 text-rose-700 shrink-0" />
+                                    ) : check.status === 'WARNING' ? (
+                                      <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                                    ) : (
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                                    )}
+                                    <span>{check.check_name}</span>
+                                  </div>
+                                  <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded font-semibold">
+                                    {check.status}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-500 pl-5 leading-normal">
+                                  {check.explanation}
+                                </p>
+                                {check.difference && (
+                                  <div className="pl-5 text-[10px] font-mono text-rose-700 font-bold">
+                                    Discrepancy: ₹{check.difference} (Expected: {check.expected_value}, Actual: {check.actual_value})
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="p-12 text-center text-slate-500 text-xs">
@@ -947,9 +1029,9 @@ export default function App() {
                     <div>
                       <h2 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
                         <Scale className="w-4 h-4 text-emerald-700" />
-                        <span>Proposed Double-Entry Journal</span>
+                        <span>Journal entry</span>
                       </h2>
-                      <p className="text-[11px] text-slate-500">Multi-Stage Deterministic Invariant Verified</p>
+                      <p className="text-[11px] text-slate-500">Generated from the extracted invoice</p>
                     </div>
 
                     {selectedDoc.proposal && (
@@ -964,7 +1046,7 @@ export default function App() {
                     <div className="p-5 space-y-5 flex-1 flex flex-col justify-between">
                       <div className="space-y-4">
                         {/* Transaction Type & Narration */}
-                        <div className="bg-[#F7F8FA] p-3.5 rounded-xl border border-slate-200 text-xs space-y-2">
+                        <div className="text-xs space-y-2">
                           <div className="flex items-center space-x-2">
                             <span className="text-slate-500 font-medium">Classification:</span>
                             <span className="font-mono text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
@@ -978,7 +1060,7 @@ export default function App() {
                         </div>
 
                         {/* Double-Entry Table */}
-                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-[#F7F8FA]">
+                        <div className="border-y border-slate-200">
                           <table className="w-full text-left text-xs">
                             <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 text-[11px]">
                               <tr>
@@ -1018,8 +1100,8 @@ export default function App() {
                         </div>
 
                         {/* Applied Policies & Reasoning */}
-                        <div className="text-xs bg-[#F7F8FA] p-3.5 rounded-xl border border-slate-200 space-y-1.5">
-                          <span className="font-bold text-slate-700 block text-[11px] uppercase tracking-wider">Applied Accounting Rules:</span>
+                        <div className="text-xs border-t border-slate-200 pt-4 space-y-1.5">
+                          <span className="font-semibold text-slate-900 block text-xs">Rules applied</span>
                           <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-500">
                             {selectedDoc.proposal.applied_rules?.map((rule, idx) => (
                               <li key={idx} className="leading-relaxed">{rule}</li>
@@ -1027,89 +1109,6 @@ export default function App() {
                           </ul>
                         </div>
 
-                        {/* Deterministic Invariant & Compliance Gate Report */}
-                        {selectedDoc.validation_report && (
-                          <div className="bg-[#F7F8FA] p-4 rounded-xl border border-slate-200 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <ShieldCheck className="w-4 h-4 text-blue-700" />
-                                <span className="font-bold text-slate-800 text-xs">Multi-Stage Invariant Verification</span>
-                              </div>
-                              <span className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-full border ${
-                                selectedDoc.validation_report.has_blocking_failures 
-                                  ? 'bg-rose-50 text-rose-700 border-rose-300' 
-                                  : selectedDoc.proposal?.requires_human_review 
-                                    ? 'bg-amber-50 text-amber-700 border-amber-300' 
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-500/40'
-                              }`}>
-                                {selectedDoc.validation_report.has_blocking_failures 
-                                  ? 'POSTING BLOCKED' 
-                                  : selectedDoc.proposal?.requires_human_review 
-                                    ? 'HUMAN REVIEW REQUIRED' 
-                                    : 'GATE PASSED (AUTO-POSTABLE)'}
-                              </span>
-                            </div>
-
-                            <p className="text-[11px] text-slate-700 font-medium">
-                              {selectedDoc.validation_report.summary_message}
-                            </p>
-
-                            {/* Review Reasons Callout */}
-                            {selectedDoc.proposal?.requires_human_review && selectedDoc.proposal.review_reasons?.length > 0 && (
-                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-[11px] space-y-1">
-                                <div className="font-bold flex items-center space-x-1.5 text-amber-800">
-                                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-700" />
-                                  <span>Accountant Attention Points:</span>
-                                </div>
-                                <ul className="list-disc list-inside space-y-0.5 text-amber-800 pl-1 leading-relaxed">
-                                  {selectedDoc.proposal.review_reasons.map((r, i) => (
-                                    <li key={i}>{r}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-
-                            {/* Detailed Invariant Checks */}
-                            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                              {selectedDoc.validation_report.checks?.map((check, idx) => (
-                                <div 
-                                  key={idx} 
-                                  className={`p-2 rounded-lg text-[11px] border flex flex-col space-y-1 ${
-                                    check.status === 'FAIL' 
-                                      ? 'bg-rose-50 border-rose-200 text-rose-700' 
-                                      : check.status === 'WARNING' 
-                                        ? 'bg-amber-50 border-amber-200 text-amber-700' 
-                                        : 'bg-slate-50 border-slate-200 text-slate-700'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-1.5 font-semibold text-slate-800">
-                                      {check.status === 'FAIL' ? (
-                                        <XCircle className="w-3.5 h-3.5 text-rose-700 shrink-0" />
-                                      ) : check.status === 'WARNING' ? (
-                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                                      ) : (
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                                      )}
-                                      <span>{check.check_name}</span>
-                                    </div>
-                                    <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded font-semibold">
-                                      {check.status}
-                                    </span>
-                                  </div>
-                                  <p className="text-[10px] text-slate-500 pl-5 leading-normal">
-                                    {check.explanation}
-                                  </p>
-                                  {check.difference && (
-                                    <div className="pl-5 text-[10px] font-mono text-rose-700 font-bold">
-                                      Discrepancy: ₹{check.difference} (Expected: {check.expected_value}, Actual: {check.actual_value})
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
                       </div>
 
                       {/* Approval Action */}
@@ -1165,10 +1164,7 @@ export default function App() {
         {activeTab === 'ledger' && (
           <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-[#FAFBFC]">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-900">General Ledger (Posted Double-Entry Journal)</h2>
-                <p className="text-xs text-slate-500">Immutable, audited double-entry records with document provenance.</p>
-              </div>
+              <p className="text-xs text-slate-500">Immutable, audited records with document provenance.</p>
               <div className="flex items-center space-x-2">
                 <ExportButtons report="ledger" />
                 <button
@@ -1207,7 +1203,7 @@ export default function App() {
                     </div>
                     <p className="text-xs text-slate-700 italic mb-3.5 leading-relaxed">{entry.narration}</p>
 
-                    <div className="rounded-xl border border-slate-200 overflow-hidden bg-[#F7F8FA]">
+                    <div className="border border-slate-200 overflow-hidden">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 text-[11px]">
                           <tr>
@@ -1244,12 +1240,9 @@ export default function App() {
         {activeTab === 'trial-balance' && (
           <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-[#FAFBFC]">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-900">Authoritative Trial Balance</h2>
-                <p className="text-xs text-slate-500">
-                  Dynamically aggregated from posted double-entry journal lines as of {trialBalance?.as_of_date || 'Today'}.
-                </p>
-              </div>
+              <p className="text-xs text-slate-500">
+                Derived from posted journal lines as of {trialBalance?.as_of_date || 'today'}.
+              </p>
 
               <div className="flex items-center space-x-2">
                 <ExportButtons report="trial-balance" />
@@ -1446,8 +1439,7 @@ export default function App() {
         {activeTab === 'audit' && (
           <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200 bg-[#FAFBFC]">
-              <h2 className="text-sm font-semibold text-slate-900">Immutable System Audit Trail</h2>
-              <p className="text-xs text-slate-500">Every invoice upload, extraction, and ledger posting recorded with provenance.</p>
+              <p className="text-xs text-slate-500">Uploads, corrections, postings, and sign-ins, with provenance.</p>
             </div>
 
             {auditLogs.length === 0 ? (
@@ -1482,7 +1474,9 @@ export default function App() {
             )}
           </div>
         )}
-      </main>
+          </main>
+        </div>
+      </div>
     </div>
   );
 }
