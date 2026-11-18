@@ -17,8 +17,14 @@ DATA_DIR = os.path.abspath(
 
 
 @pytest.fixture
-def anonymous_client():
-    """Isolated in-memory database, no credentials attached."""
+def anonymous_client(tmp_path, monkeypatch):
+    """Isolated in-memory database and upload directory, no credentials attached."""
+    import app.main as main_module
+
+    upload_dir = tmp_path / "uploads"
+    upload_dir.mkdir()
+    monkeypatch.setattr(main_module, "UPLOAD_DIR", str(upload_dir))
+
     test_engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
