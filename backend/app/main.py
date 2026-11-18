@@ -1,10 +1,11 @@
 import os
+import json
 import shutil
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
-from fastapi import FastAPI, Depends, UploadFile, File, HTTPException
+from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -23,11 +24,18 @@ from app.models.accounting import (
 )
 from app.db.seed_accounts import seed_standard_accounts
 from app.schemas.accounting import ProposedJournalEntry, ProposedJournalLine, EntryType
+from app.schemas.invoice import (
+    ExtractedInvoice,
+    ExtractionConfidence,
+    InvoiceCorrectionRequest,
+    InvoiceLineItem as InvoiceLineItemSchema,
+)
 from app.engine.ingestion import DocumentIngestionService
 from app.engine.interpreter import AccountingInterpreter
 from app.engine.invariants import run_comprehensive_validation
 from app.engine.ledger import post_journal_entry, generate_trial_balance
 from app.engine.statements import FinancialStatementService
+from app.engine import export as export_service
 
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
@@ -65,6 +73,180 @@ def get_or_create_default_tenant(db: Session) -> Tenant:
         db.refresh(tenant)
         seed_standard_accounts(db, tenant.id)
     return tenant
+
+
+# ---------------------------------------------------------------------------
+# Shared invoice pipeline helpers
+# ---------------------------------------------------------------------------
+
+def _extracted_invoice_from_db(inv: Invoice) -> ExtractedInvoice:
+    """Rebuild the domain model from stored fields, so corrections survive reads."""
+    return ExtractedInvoice(
+        invoice_number=inv.invoice_number,
+        invoice_date=inv.invoice_date,
+        due_date=inv.due_date,
+        vendor_name=inv.vendor_name,
+        vendor_gstin=inv.vendor_gstin,
+        vendor_address=inv.vendor_address,
+        buyer_name=inv.buyer_name,
+        buyer_gstin=inv.buyer_gstin,
+        place_of_supply=inv.place_of_supply,
+        place_of_supply_state_code=inv.place_of_supply_state_code,
+        payment_terms=inv.payment_terms,
+        subtotal=inv.subtotal,
+        total_tax=inv.total_tax,
+        total_discount=inv.total_discount,
+        grand_total=inv.grand_total,
+        line_items=[
+            InvoiceLineItemSchema(
+                description=item.description,
+                hsn_sac=item.hsn_sac,
+                quantity=item.quantity,
+                unit_price=item.unit_price,
+                discount_amount=item.discount_amount,
+                tax_rate_percent=item.tax_rate_percent,
+                total_amount=item.total_amount,
+            )
+            for item in inv.line_items
+        ],
+        confidence=ExtractionConfidence(inv.confidence or "HIGH"),
+        validation_flags=[flag for flag in (inv.validation_flags or "").split("; ") if flag],
+    )
+
+
+def _persist_invoice(db: Session, doc: Document, tenant: Tenant, extracted: ExtractedInvoice) -> Invoice:
+    """Replace the stored invoice and its line items with the given extraction."""
+    existing = db.query(Invoice).filter(Invoice.document_id == doc.id).first()
+    if existing:
+        db.delete(existing)
+        db.flush()
+
+    db_invoice = Invoice(
+        document_id=doc.id,
+        tenant_id=tenant.id,
+        invoice_number=extracted.invoice_number,
+        invoice_date=extracted.invoice_date,
+        due_date=extracted.due_date,
+        vendor_name=extracted.vendor_name,
+        vendor_gstin=extracted.vendor_gstin,
+        vendor_address=extracted.vendor_address,
+        buyer_name=extracted.buyer_name,
+        buyer_gstin=extracted.buyer_gstin,
+        place_of_supply=extracted.place_of_supply,
+        place_of_supply_state_code=extracted.place_of_supply_state_code,
+        payment_terms=extracted.payment_terms,
+        subtotal=extracted.subtotal,
+        total_tax=extracted.total_tax,
+        total_discount=extracted.total_discount,
+        grand_total=extracted.grand_total,
+        confidence=extracted.confidence.value,
+        validation_flags="; ".join(extracted.validation_flags) if extracted.validation_flags else None,
+    )
+    db.add(db_invoice)
+    db.flush()
+
+    for item in extracted.line_items:
+        db.add(LineItem(
+            invoice_id=db_invoice.id,
+            description=item.description,
+            hsn_sac=item.hsn_sac,
+            quantity=item.quantity,
+            unit_price=item.unit_price,
+            discount_amount=item.discount_amount,
+            tax_rate_percent=item.tax_rate_percent,
+            total_amount=item.total_amount,
+        ))
+
+    db.flush()
+    return db_invoice
+
+
+def _proposal_and_validation(db: Session, tenant: Tenant, extracted: ExtractedInvoice, document_id: str):
+    proposal = AccountingInterpreter.interpret_invoice(
+        invoice=extracted,
+        document_id=document_id,
+        creditor_account_code="2010",
+    )
+    active_codes = {
+        account.code
+        for account in db.query(Account).filter(Account.tenant_id == tenant.id, Account.is_active == True).all()
+    }
+    report = run_comprehensive_validation(
+        invoice=extracted,
+        entry=proposal,
+        active_account_codes=active_codes,
+    )
+    proposal.validation_report = report
+    return proposal, report
+
+
+def _apply_document_status(doc: Document, report) -> None:
+    doc.status = (
+        DocumentStatus.REVIEW_REQUIRED
+        if (report.has_blocking_failures or not report.can_post_automatically)
+        else DocumentStatus.PROCESSED
+    )
+
+
+def _serialize_invoice(inv: Invoice) -> dict:
+    return {
+        "invoice_number": inv.invoice_number,
+        "invoice_date": inv.invoice_date.isoformat(),
+        "due_date": inv.due_date.isoformat() if inv.due_date else None,
+        "vendor_name": inv.vendor_name,
+        "vendor_gstin": inv.vendor_gstin,
+        "buyer_name": inv.buyer_name,
+        "buyer_gstin": inv.buyer_gstin,
+        "place_of_supply": inv.place_of_supply,
+        "confidence": inv.confidence or "HIGH",
+        "subtotal": float(inv.subtotal),
+        "total_tax": float(inv.total_tax),
+        "total_discount": float(inv.total_discount),
+        "grand_total": float(inv.grand_total),
+        "validation_flags": inv.validation_flags.split("; ") if inv.validation_flags else [],
+        "line_items": [
+            {
+                "description": item.description,
+                "hsn_sac": item.hsn_sac,
+                "quantity": float(item.quantity),
+                "unit_price": float(item.unit_price),
+                "discount_amount": float(item.discount_amount),
+                "tax_rate_percent": float(item.tax_rate_percent),
+                "total_amount": float(item.total_amount),
+            }
+            for item in inv.line_items
+        ],
+    }
+
+
+def _ledger_entries(db: Session, tenant_id: str) -> List[dict]:
+    """Posted journal entries, ready for JSON, CSV and Tally export."""
+    entries = (
+        db.query(JournalEntry)
+        .filter(JournalEntry.tenant_id == tenant_id, JournalEntry.status == EntryPostingStatus.POSTED)
+        .order_by(JournalEntry.entry_date.desc(), JournalEntry.created_at.desc())
+        .all()
+    )
+    return [
+        {
+            "id": entry.id,
+            "invoice_number": entry.invoice_number,
+            "entry_date": entry.entry_date.isoformat(),
+            "transaction_type": entry.transaction_type.value,
+            "narration": entry.narration,
+            "lines": [
+                {
+                    "account_code": line.account.code,
+                    "account_name": line.account.name,
+                    "entry_type": line.entry_type.value,
+                    "amount": float(line.amount),
+                    "description": line.description,
+                }
+                for line in entry.lines
+            ],
+        }
+        for entry in entries
+    ]
 
 
 @app.get("/api/health")
@@ -160,59 +342,11 @@ def process_document(doc_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Extraction failed: {str(e)}")
 
     # 2. Persist Extracted Invoice
-    existing_inv = db.query(Invoice).filter(Invoice.document_id == doc.id).first()
-    if existing_inv:
-        db.delete(existing_inv)
-        db.flush()
+    _persist_invoice(db, doc, tenant, extracted)
 
-    db_invoice = Invoice(
-        document_id=doc.id,
-        tenant_id=tenant.id,
-        invoice_number=extracted.invoice_number,
-        invoice_date=extracted.invoice_date,
-        due_date=extracted.due_date,
-        vendor_name=extracted.vendor_name,
-        vendor_gstin=extracted.vendor_gstin,
-        buyer_name=extracted.buyer_name,
-        buyer_gstin=extracted.buyer_gstin,
-        subtotal=extracted.subtotal,
-        total_tax=extracted.total_tax,
-        total_discount=extracted.total_discount,
-        grand_total=extracted.grand_total,
-        validation_flags="; ".join(extracted.validation_flags) if extracted.validation_flags else None
-    )
-    db.add(db_invoice)
-    db.flush()
-
-    for item in extracted.line_items:
-        db_item = LineItem(
-            invoice_id=db_invoice.id,
-            description=item.description,
-            hsn_sac=item.hsn_sac,
-            quantity=item.quantity,
-            unit_price=item.unit_price,
-            discount_amount=item.discount_amount,
-            total_amount=item.total_amount
-        )
-        db.add(db_item)
-
-    # 3. Interpret Transaction and Generate Journal Proposal
-    proposal = AccountingInterpreter.interpret_invoice(
-        invoice=extracted,
-        document_id=doc.id,
-        creditor_account_code="2010"
-    )
-
-    # 4. Run Multi-Stage Deterministic Validation Suite
-    active_codes = {acc.code for acc in db.query(Account).filter(Account.tenant_id == tenant.id, Account.is_active == True).all()}
-    validation_report = run_comprehensive_validation(
-        invoice=extracted,
-        entry=proposal,
-        active_account_codes=active_codes
-    )
-    proposal.validation_report = validation_report
-
-    doc.status = DocumentStatus.REVIEW_REQUIRED if (validation_report.has_blocking_failures or not validation_report.can_post_automatically) else DocumentStatus.PROCESSED
+    # 3. Interpret Transaction, Generate Journal Proposal & Validate
+    proposal, validation_report = _proposal_and_validation(db, tenant, extracted, doc.id)
+    _apply_document_status(doc, validation_report)
     db.commit()
 
     return {
@@ -233,45 +367,14 @@ def get_document_details(doc_id: str, db: Session = Depends(get_db)):
     inv = doc.invoice
     inv_data = None
     proposal_data = None
+    validation_data = None
 
     if inv:
-        line_items_data = [
-            {
-                "description": it.description,
-                "hsn_sac": it.hsn_sac,
-                "quantity": float(it.quantity),
-                "unit_price": float(it.unit_price),
-                "discount_amount": float(it.discount_amount),
-                "total_amount": float(it.total_amount)
-            }
-            for it in inv.line_items
-        ]
-        inv_data = {
-            "invoice_number": inv.invoice_number,
-            "invoice_date": inv.invoice_date.isoformat(),
-            "due_date": inv.due_date.isoformat() if inv.due_date else None,
-            "vendor_name": inv.vendor_name,
-            "vendor_gstin": inv.vendor_gstin,
-            "buyer_name": inv.buyer_name,
-            "buyer_gstin": inv.buyer_gstin,
-            "subtotal": float(inv.subtotal),
-            "total_tax": float(inv.total_tax),
-            "total_discount": float(inv.total_discount),
-            "grand_total": float(inv.grand_total),
-            "validation_flags": inv.validation_flags.split("; ") if inv.validation_flags else [],
-            "line_items": line_items_data
-        }
+        inv_data = _serialize_invoice(inv)
 
-        # Re-generate proposal and validation report on the fly for review
-        extracted_obj = DocumentIngestionService.process_pdf_invoice(doc.file_path)
-        proposal = AccountingInterpreter.interpret_invoice(extracted_obj, document_id=doc.id)
-        active_codes = {acc.code for acc in db.query(Account).filter(Account.tenant_id == tenant.id, Account.is_active == True).all()}
-        validation_report = run_comprehensive_validation(
-            invoice=extracted_obj,
-            entry=proposal,
-            active_account_codes=active_codes
-        )
-        proposal.validation_report = validation_report
+        # Rebuild the proposal from the stored (possibly corrected) invoice.
+        extracted_obj = _extracted_invoice_from_db(inv)
+        proposal, validation_report = _proposal_and_validation(db, tenant, extracted_obj, doc.id)
         proposal_data = proposal.model_dump()
         validation_data = validation_report.model_dump()
 
@@ -281,7 +384,63 @@ def get_document_details(doc_id: str, db: Session = Depends(get_db)):
         "status": doc.status,
         "invoice": inv_data,
         "proposal": proposal_data,
-        "validation_report": validation_data if inv else None
+        "validation_report": validation_data
+    }
+
+
+@app.put("/api/documents/{doc_id}/invoice")
+def correct_invoice(doc_id: str, correction: InvoiceCorrectionRequest, db: Session = Depends(get_db)):
+    """Apply a human correction from the review interface and re-validate."""
+    tenant = get_or_create_default_tenant(db)
+    doc = db.query(Document).filter(Document.id == doc_id, Document.tenant_id == tenant.id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    already_posted = (
+        doc.status == DocumentStatus.POSTED
+        or db.query(JournalEntry)
+        .filter(JournalEntry.document_id == doc.id, JournalEntry.status == EntryPostingStatus.POSTED)
+        .first()
+        is not None
+    )
+    if already_posted:
+        raise HTTPException(
+            status_code=409,
+            detail="This invoice is already posted to the General Ledger. Posted entries are immutable; raise a reversing entry instead.",
+        )
+
+    extracted = ExtractedInvoice(
+        **correction.model_dump(),
+        confidence=ExtractionConfidence.HIGH,
+        validation_flags=["Fields corrected by a human reviewer."],
+    )
+
+    db_invoice = _persist_invoice(db, doc, tenant, extracted)
+    proposal, validation_report = _proposal_and_validation(db, tenant, extracted, doc.id)
+    _apply_document_status(doc, validation_report)
+
+    db.add(AuditLog(
+        tenant_id=tenant.id,
+        entity_name="Invoice",
+        entity_id=doc.id,
+        action="EDIT",
+        performed_by="USER_REVIEWER",
+        details=json.dumps({
+            "invoice_number": extracted.invoice_number,
+            "vendor_name": extracted.vendor_name,
+            "grand_total": str(extracted.grand_total),
+            "line_items": len(extracted.line_items),
+        }),
+    ))
+    db.commit()
+
+    return {
+        "id": doc.id,
+        "filename": doc.filename,
+        "status": doc.status,
+        "invoice": _serialize_invoice(db_invoice),
+        "proposal": proposal.model_dump(),
+        "validation_report": validation_report.model_dump()
     }
 
 
@@ -306,34 +465,7 @@ def post_entry(proposal: ProposedJournalEntry, db: Session = Depends(get_db)):
 @app.get("/api/reports/ledger")
 def get_general_ledger(db: Session = Depends(get_db)):
     tenant = get_or_create_default_tenant(db)
-    entries = (
-        db.query(JournalEntry)
-        .filter(JournalEntry.tenant_id == tenant.id, JournalEntry.status == EntryPostingStatus.POSTED)
-        .order_by(JournalEntry.entry_date.desc(), JournalEntry.created_at.desc())
-        .all()
-    )
-
-    results = []
-    for e in entries:
-        lines = [
-            {
-                "account_code": l.account.code,
-                "account_name": l.account.name,
-                "entry_type": l.entry_type.value,
-                "amount": float(l.amount),
-                "description": l.description
-            }
-            for l in e.lines
-        ]
-        results.append({
-            "id": e.id,
-            "invoice_number": e.invoice_number,
-            "entry_date": e.entry_date.isoformat(),
-            "transaction_type": e.transaction_type.value,
-            "narration": e.narration,
-            "lines": lines
-        })
-    return results
+    return _ledger_entries(db, tenant.id)
 
 
 @app.get("/api/reports/trial-balance")
@@ -409,3 +541,54 @@ def get_audit_logs(db: Session = Depends(get_db)):
         }
         for l in logs
     ]
+
+
+# ---------------------------------------------------------------------------
+# Report export (methodology stage 9)
+# ---------------------------------------------------------------------------
+
+EXPORTABLE_REPORTS = ("ledger", "trial-balance", "profit-and-loss", "balance-sheet")
+
+
+@app.get("/api/reports/export/{report_name}")
+def export_report(report_name: str, format: str = "csv", db: Session = Depends(get_db)):
+    """Download a report as CSV / Excel, or the journal as Tally import XML."""
+    tenant = get_or_create_default_tenant(db)
+
+    if report_name == "tally":
+        xml = export_service.journal_to_tally_xml(_ledger_entries(db, tenant.id), tenant.name)
+        return Response(
+            content=xml,
+            media_type="application/xml",
+            headers={
+                "Content-Disposition": f'attachment; filename="tally-vouchers-{date.today().isoformat()}.xml"'
+            },
+        )
+
+    if report_name not in EXPORTABLE_REPORTS:
+        raise HTTPException(status_code=404, detail=f"Unknown report '{report_name}'")
+    if format not in ("csv", "xlsx"):
+        raise HTTPException(status_code=400, detail="Supported formats are 'csv' and 'xlsx'")
+
+    if report_name == "ledger":
+        table = export_service.ledger_table(_ledger_entries(db, tenant.id))
+    elif report_name == "trial-balance":
+        table = export_service.trial_balance_table(get_trial_balance_report(db))
+    elif report_name == "profit-and-loss":
+        table = export_service.profit_and_loss_table(get_profit_and_loss(db))
+    else:
+        table = export_service.balance_sheet_table(get_balance_sheet(db))
+
+    filename = f"{report_name}-{date.today().isoformat()}"
+    if format == "csv":
+        return Response(
+            content=export_service.to_csv(table),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{filename}.csv"'},
+        )
+
+    return Response(
+        content=export_service.to_xlsx(table, report_name),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}.xlsx"'},
+    )

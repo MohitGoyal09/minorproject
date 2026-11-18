@@ -4,8 +4,45 @@ import {
   FileText, CheckCircle2, AlertTriangle, ArrowRight, ShieldCheck, 
   BookOpen, Scale, PieChart, History, Upload, RefreshCw, Sparkles,
   Layers, Landmark, XCircle, Info, ShieldAlert, Building2, Coins, Receipt,
-  TrendingUp, Check, ChevronRight, SlidersHorizontal
+  TrendingUp, Check, ChevronRight, SlidersHorizontal, Pencil, Save, X, Download,
+  FileSpreadsheet
 } from 'lucide-react';
+
+function EditInput({ value, onChange, type = 'text', align = 'left' }) {
+  const alignment = align === 'right' ? 'text-right' : 'text-left';
+  return (
+    <input
+      type={type}
+      value={value ?? ''}
+      onChange={(event) => onChange(event.target.value)}
+      className={`w-full bg-[#0b1220] border border-indigo-500/40 hover:border-indigo-500/70 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-500/30 rounded-md px-2 py-1 text-xs text-white font-mono outline-none transition-colors ${alignment}`}
+    />
+  );
+}
+
+function ExportButtons({ report }) {
+  const base = "px-2.5 py-1 text-[11px] font-bold rounded-lg border flex items-center space-x-1 cursor-pointer transition-colors";
+  return (
+    <div className="flex items-center space-x-1.5">
+      <button
+        onClick={() => window.open(`/api/reports/export/${report}?format=csv`, '_blank')}
+        className={`${base} bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700`}
+        title="Download as CSV"
+      >
+        <Download className="w-3 h-3" />
+        <span>CSV</span>
+      </button>
+      <button
+        onClick={() => window.open(`/api/reports/export/${report}?format=xlsx`, '_blank')}
+        className={`${base} bg-slate-800 hover:bg-slate-700 text-emerald-300 border-slate-700`}
+        title="Download as Excel workbook"
+      >
+        <FileSpreadsheet className="w-3 h-3" />
+        <span>Excel</span>
+      </button>
+    </div>
+  );
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('invoices');
@@ -23,6 +60,11 @@ export default function App() {
   const [balanceSheet, setBalanceSheet] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [actionMessage, setActionMessage] = useState(null);
+
+  // Human correction (stage 4 review interface)
+  const [editMode, setEditMode] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [savingCorrections, setSavingCorrections] = useState(false);
 
   useEffect(() => {
     fetchTenant();
@@ -83,6 +125,8 @@ export default function App() {
 
   const handleSelectDocument = async (docId) => {
     setLoading(true);
+    setEditMode(false);
+    setDraft(null);
     try {
       const res = await axios.get(`/api/documents/${docId}`);
       setSelectedDoc(res.data);
@@ -135,6 +179,76 @@ export default function App() {
       fetchReports();
     }
   };
+
+  // --- Human correction of an extracted invoice -------------------------
+  const startEditing = () => {
+    if (!selectedDoc?.invoice) return;
+    setDraft(JSON.parse(JSON.stringify(selectedDoc.invoice)));
+    setEditMode(true);
+  };
+
+  const cancelEditing = () => {
+    setEditMode(false);
+    setDraft(null);
+  };
+
+  const updateDraft = (field, value) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const updateDraftLine = (index, field, value) => {
+    setDraft((current) => ({
+      ...current,
+      line_items: current.line_items.map((item, idx) =>
+        idx === index ? { ...item, [field]: value } : item
+      ),
+    }));
+  };
+
+  const handleSaveCorrections = async () => {
+    if (!draft) return;
+    setSavingCorrections(true);
+    try {
+      const payload = {
+        invoice_number: draft.invoice_number,
+        invoice_date: draft.invoice_date,
+        due_date: draft.due_date || null,
+        vendor_name: draft.vendor_name,
+        vendor_gstin: draft.vendor_gstin || null,
+        buyer_name: draft.buyer_name || null,
+        buyer_gstin: draft.buyer_gstin || null,
+        place_of_supply: draft.place_of_supply || null,
+        subtotal: Number(draft.subtotal),
+        total_tax: Number(draft.total_tax || 0),
+        total_discount: Number(draft.total_discount || 0),
+        grand_total: Number(draft.grand_total),
+        line_items: draft.line_items.map((item) => ({
+          description: item.description,
+          hsn_sac: item.hsn_sac || null,
+          quantity: Number(item.quantity || 0),
+          unit_price: Number(item.unit_price || 0),
+          discount_amount: Number(item.discount_amount || 0),
+          tax_rate_percent: Number(item.tax_rate_percent || 0),
+          total_amount: Number(item.total_amount || 0),
+        })),
+      };
+      const res = await axios.put(`/api/documents/${selectedDoc.id}/invoice`, payload);
+      setSelectedDoc(res.data);
+      setEditMode(false);
+      setDraft(null);
+      setActionMessage({ type: 'success', text: 'Corrections saved. Journal proposal and validation re-generated.' });
+      await fetchDocuments();
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const message = Array.isArray(detail)
+        ? detail.map((d) => `${d.loc?.slice(-1)[0]}: ${d.msg}`).join('; ')
+        : detail || err.message;
+      setActionMessage({ type: 'error', text: 'Correction failed: ' + message });
+    } finally {
+      setSavingCorrections(false);
+    }
+  };
+
 
   // Stats calculation
   const totalInvoices = documents.length;
@@ -444,9 +558,47 @@ export default function App() {
                       </h2>
                       <p className="text-[11px] text-slate-400 font-mono truncate max-w-xs">{selectedDoc.filename}</p>
                     </div>
-                    <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-900 text-slate-300 border border-slate-700">
-                      Pipeline: {selectedDoc.status}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      {selectedDoc.invoice?.confidence && selectedDoc.invoice.confidence !== 'HIGH' && (
+                        <span
+                          className="px-2 py-1 text-[10px] font-extrabold rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                          title="Fields must be checked against the original document before posting."
+                        >
+                          {selectedDoc.invoice.confidence === 'LOW' ? 'LOW CONFIDENCE' : 'OCR — VERIFY'}
+                        </span>
+                      )}
+                      <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-900 text-slate-300 border border-slate-700">
+                        Pipeline: {selectedDoc.status}
+                      </span>
+                      {selectedDoc.invoice && selectedDoc.status !== 'POSTED' && !editMode && (
+                        <button
+                          onClick={startEditing}
+                          className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/40 flex items-center space-x-1 cursor-pointer transition-colors"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          <span>Correct</span>
+                        </button>
+                      )}
+                      {editMode && (
+                        <>
+                          <button
+                            onClick={handleSaveCorrections}
+                            disabled={savingCorrections}
+                            className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center space-x-1 cursor-pointer disabled:opacity-60 transition-colors"
+                          >
+                            <Save className="w-3 h-3" />
+                            <span>{savingCorrections ? 'Saving...' : 'Save & Re-validate'}</span>
+                          </button>
+                          <button
+                            onClick={cancelEditing}
+                            className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center space-x-1 cursor-pointer transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                            <span>Cancel</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {selectedDoc.invoice ? (
@@ -455,27 +607,66 @@ export default function App() {
                       <div className="grid grid-cols-2 gap-3 bg-[#050811] p-3.5 rounded-xl border border-slate-800/80 text-xs">
                         <div>
                           <span className="text-slate-400 block text-[11px] font-medium">Invoice Number</span>
-                          <p className="font-extrabold text-white font-mono text-xs mt-0.5">{selectedDoc.invoice.invoice_number}</p>
+                          {editMode ? (
+                            <div className="mt-1"><EditInput value={draft.invoice_number} onChange={(v) => updateDraft('invoice_number', v)} /></div>
+                          ) : (
+                            <p className="font-extrabold text-white font-mono text-xs mt-0.5">{selectedDoc.invoice.invoice_number}</p>
+                          )}
                         </div>
                         <div>
                           <span className="text-slate-400 block text-[11px] font-medium">Invoice Date</span>
-                          <p className="font-extrabold text-white text-xs mt-0.5">{selectedDoc.invoice.invoice_date}</p>
+                          {editMode ? (
+                            <div className="mt-1"><EditInput type="date" value={draft.invoice_date} onChange={(v) => updateDraft('invoice_date', v)} /></div>
+                          ) : (
+                            <p className="font-extrabold text-white text-xs mt-0.5">{selectedDoc.invoice.invoice_date}</p>
+                          )}
                         </div>
                         <div>
                           <span className="text-slate-400 block text-[11px] font-medium">Vendor / Supplier</span>
-                          <p className="font-bold text-slate-200 mt-0.5">{selectedDoc.invoice.vendor_name}</p>
-                          <p className="text-slate-400 font-mono text-[10px] mt-0.5">GSTIN: {selectedDoc.invoice.vendor_gstin || 'N/A'}</p>
+                          {editMode ? (
+                            <div className="space-y-1 mt-1">
+                              <EditInput value={draft.vendor_name} onChange={(v) => updateDraft('vendor_name', v)} />
+                              <EditInput value={draft.vendor_gstin} onChange={(v) => updateDraft('vendor_gstin', v)} />
+                            </div>
+                          ) : (
+                            <>
+                              <p className="font-bold text-slate-200 mt-0.5">{selectedDoc.invoice.vendor_name}</p>
+                              <p className="text-slate-400 font-mono text-[10px] mt-0.5">GSTIN: {selectedDoc.invoice.vendor_gstin || 'N/A'}</p>
+                            </>
+                          )}
                         </div>
                         <div>
                           <span className="text-slate-400 block text-[11px] font-medium">Buyer / Customer</span>
-                          <p className="font-bold text-slate-200 mt-0.5">{selectedDoc.invoice.buyer_name || 'Modern Tech Solutions'}</p>
-                          <p className="text-slate-400 font-mono text-[10px] mt-0.5">GSTIN: {selectedDoc.invoice.buyer_gstin || 'N/A'}</p>
+                          {editMode ? (
+                            <div className="space-y-1 mt-1">
+                              <EditInput value={draft.buyer_name} onChange={(v) => updateDraft('buyer_name', v)} />
+                              <EditInput value={draft.buyer_gstin} onChange={(v) => updateDraft('buyer_gstin', v)} />
+                            </div>
+                          ) : (
+                            <>
+                              <p className="font-bold text-slate-200 mt-0.5">{selectedDoc.invoice.buyer_name || 'Modern Tech Solutions'}</p>
+                              <p className="text-slate-400 font-mono text-[10px] mt-0.5">GSTIN: {selectedDoc.invoice.buyer_gstin || 'N/A'}</p>
+                            </>
+                          )}
                         </div>
-                        {selectedDoc.invoice.place_of_supply && (
-                          <div className="col-span-2 pt-1 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
-                            <span className="text-slate-400">Place of Supply:</span>
-                            <span className="font-mono text-indigo-400 font-bold">{selectedDoc.invoice.place_of_supply}</span>
+                        {editMode ? (
+                          <div className="col-span-2 pt-1 border-t border-slate-800/60 grid grid-cols-2 gap-3">
+                            <div>
+                              <span className="text-slate-400 block text-[11px] font-medium">Due Date</span>
+                              <div className="mt-1"><EditInput type="date" value={draft.due_date} onChange={(v) => updateDraft('due_date', v)} /></div>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block text-[11px] font-medium">Place of Supply</span>
+                              <div className="mt-1"><EditInput value={draft.place_of_supply} onChange={(v) => updateDraft('place_of_supply', v)} /></div>
+                            </div>
                           </div>
+                        ) : (
+                          (selectedDoc.invoice.place_of_supply || selectedDoc.invoice.due_date) && (
+                            <div className="col-span-2 pt-1 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+                              <span className="text-slate-400">Place of Supply: <span className="font-mono text-indigo-400 font-bold">{selectedDoc.invoice.place_of_supply || 'N/A'}</span></span>
+                              <span className="text-slate-400">Due: <span className="font-mono text-slate-300">{selectedDoc.invoice.due_date || 'N/A'}</span></span>
+                            </div>
+                          )
                         )}
                       </div>
 
@@ -503,14 +694,38 @@ export default function App() {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/50">
-                              {selectedDoc.invoice.line_items.map((item, idx) => (
+                              {(editMode ? draft.line_items : selectedDoc.invoice.line_items).map((item, idx) => (
                                 <tr key={idx} className="hover:bg-slate-800/30">
-                                  <td className="py-2.5 px-3 font-semibold text-slate-200">{item.description}</td>
-                                  <td className="py-2.5 px-2 text-slate-400 font-mono text-[11px]">{item.hsn_sac || '-'}</td>
-                                  <td className="py-2.5 px-2 text-right font-mono text-slate-300">{item.quantity}</td>
-                                  <td className="py-2.5 px-2 text-right font-mono text-slate-300">₹{item.unit_price.toFixed(2)}</td>
-                                  <td className="py-2.5 px-2 text-right font-mono text-slate-400">{item.discount_amount > 0 ? `₹${item.discount_amount.toFixed(2)}` : '—'}</td>
-                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-white">₹{item.total_amount.toFixed(2)}</td>
+                                  <td className="py-2.5 px-3 font-semibold text-slate-200">
+                                    {editMode
+                                      ? <EditInput value={item.description} onChange={(v) => updateDraftLine(idx, 'description', v)} />
+                                      : item.description}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-slate-400 font-mono text-[11px]">
+                                    {editMode
+                                      ? <EditInput value={item.hsn_sac} onChange={(v) => updateDraftLine(idx, 'hsn_sac', v)} />
+                                      : (item.hsn_sac || '-')}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-slate-300">
+                                    {editMode
+                                      ? <EditInput value={item.quantity} align="right" onChange={(v) => updateDraftLine(idx, 'quantity', v)} />
+                                      : item.quantity}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-slate-300">
+                                    {editMode
+                                      ? <EditInput value={item.unit_price} align="right" onChange={(v) => updateDraftLine(idx, 'unit_price', v)} />
+                                      : `₹${item.unit_price.toFixed(2)}`}
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono text-slate-400">
+                                    {editMode
+                                      ? <EditInput value={item.discount_amount} align="right" onChange={(v) => updateDraftLine(idx, 'discount_amount', v)} />
+                                      : (item.discount_amount > 0 ? `₹${item.discount_amount.toFixed(2)}` : '—')}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-white">
+                                    {editMode
+                                      ? <EditInput value={item.total_amount} align="right" onChange={(v) => updateDraftLine(idx, 'total_amount', v)} />
+                                      : `₹${item.total_amount.toFixed(2)}`}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -520,24 +735,36 @@ export default function App() {
 
                       {/* Totals Summary */}
                       <div className="bg-[#050811] p-4 rounded-xl border border-slate-800 text-xs space-y-1.5 font-mono">
-                        <div className="flex justify-between font-sans">
+                        <div className="flex justify-between items-center font-sans gap-3">
                           <span className="text-slate-400">Taxable Subtotal:</span>
-                          <span className="font-semibold text-slate-200 font-mono">₹{selectedDoc.invoice.subtotal.toFixed(2)}</span>
+                          {editMode
+                            ? <div className="w-32"><EditInput value={draft.subtotal} align="right" onChange={(v) => updateDraft('subtotal', v)} /></div>
+                            : <span className="font-semibold text-slate-200 font-mono">₹{selectedDoc.invoice.subtotal.toFixed(2)}</span>}
                         </div>
-                        <div className="flex justify-between font-sans">
+                        <div className="flex justify-between items-center font-sans gap-3">
                           <span className="text-slate-400">Total Tax (GST):</span>
-                          <span className="font-semibold text-slate-200 font-mono">₹{selectedDoc.invoice.total_tax.toFixed(2)}</span>
+                          {editMode
+                            ? <div className="w-32"><EditInput value={draft.total_tax} align="right" onChange={(v) => updateDraft('total_tax', v)} /></div>
+                            : <span className="font-semibold text-slate-200 font-mono">₹{selectedDoc.invoice.total_tax.toFixed(2)}</span>}
                         </div>
-                        {selectedDoc.invoice.total_discount > 0 && (
-                          <div className="flex justify-between font-sans text-emerald-400">
-                            <span>Total Discount:</span>
-                            <span className="font-mono">-₹{selectedDoc.invoice.total_discount.toFixed(2)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between pt-2.5 border-t border-slate-800 font-bold text-sm text-white font-sans">
+                        <div className="flex justify-between items-center font-sans text-emerald-400 gap-3">
+                          <span>Total Discount:</span>
+                          {editMode
+                            ? <div className="w-32"><EditInput value={draft.total_discount} align="right" onChange={(v) => updateDraft('total_discount', v)} /></div>
+                            : <span className="font-mono">-₹{selectedDoc.invoice.total_discount.toFixed(2)}</span>}
+                        </div>
+                        <div className="flex justify-between items-center pt-2.5 border-t border-slate-800 font-bold text-sm text-white font-sans gap-3">
                           <span>Grand Total Payable:</span>
-                          <span className="font-mono text-indigo-400 font-extrabold text-base">₹{selectedDoc.invoice.grand_total.toFixed(2)}</span>
+                          {editMode
+                            ? <div className="w-32"><EditInput value={draft.grand_total} align="right" onChange={(v) => updateDraft('grand_total', v)} /></div>
+                            : <span className="font-mono text-indigo-400 font-extrabold text-base">₹{selectedDoc.invoice.grand_total.toFixed(2)}</span>}
                         </div>
+                        {editMode && (
+                          <p className="text-[10px] text-amber-300/90 pt-1.5 border-t border-slate-800/60 leading-relaxed">
+                            Sum of line totals: ₹{draft.line_items.reduce((acc, item) => acc + (Number(item.total_amount) || 0), 0).toFixed(2)}.
+                            Keep the totals consistent, or validation will block posting.
+                          </p>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -720,7 +947,12 @@ export default function App() {
 
                       {/* Approval Action */}
                       <div className="pt-4 border-t border-slate-800">
-                        {selectedDoc.status === 'POSTED' ? (
+                        {editMode ? (
+                          <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-indigo-300 text-xs font-bold flex items-center justify-center space-x-2">
+                            <Pencil className="w-4 h-4 shrink-0" />
+                            <span>Save or cancel your corrections before posting to the ledger.</span>
+                          </div>
+                        ) : selectedDoc.status === 'POSTED' ? (
                           <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs font-bold flex items-center justify-center space-x-2">
                             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                             <span>This entry has been approved and permanently posted to the General Ledger.</span>
@@ -770,10 +1002,21 @@ export default function App() {
                 <h2 className="text-sm font-extrabold text-white">General Ledger (Posted Double-Entry Journal)</h2>
                 <p className="text-xs text-slate-400">Immutable, audited double-entry records with document provenance.</p>
               </div>
-              <button onClick={fetchReports} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center space-x-1.5 border border-slate-700 cursor-pointer">
-                <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
-                <span>Refresh</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                <ExportButtons report="ledger" />
+                <button
+                  onClick={() => window.open('/api/reports/export/tally', '_blank')}
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 flex items-center space-x-1 cursor-pointer transition-colors"
+                  title="Download Tally Prime import XML"
+                >
+                  <Download className="w-3 h-3" />
+                  <span>Tally XML</span>
+                </button>
+                <button onClick={fetchReports} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center space-x-1.5 border border-slate-700 cursor-pointer">
+                  <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Refresh</span>
+                </button>
+              </div>
             </div>
 
             {ledgerEntries.length === 0 ? (
@@ -841,17 +1084,20 @@ export default function App() {
                 </p>
               </div>
 
-              {trialBalance?.is_balanced ? (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>Trial Balance Balanced</span>
-                </span>
-              ) : (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center space-x-1.5">
-                  <AlertTriangle className="w-4 h-4 text-rose-400" />
-                  <span>Imbalance Detected</span>
-                </span>
-              )}
+              <div className="flex items-center space-x-2">
+                <ExportButtons report="trial-balance" />
+                {trialBalance?.is_balanced ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>Trial Balance Balanced</span>
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center space-x-1.5">
+                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                    <span>Imbalance Detected</span>
+                  </span>
+                )}
+              </div>
             </div>
 
             {!trialBalance || trialBalance.rows.length === 0 ? (
@@ -906,7 +1152,10 @@ export default function App() {
             <div className="bg-[#0b0f19] rounded-2xl border border-slate-800/90 shadow-xl flex flex-col overflow-hidden">
               <div className="p-4 border-b border-slate-800 bg-[#080c15] flex justify-between items-center">
                 <h3 className="font-extrabold text-sm text-white">Statement of Profit & Loss</h3>
-                <span className="text-xs text-slate-400 font-mono">Period ending {profitAndLoss?.as_of_date || 'Current'}</span>
+                <div className="flex items-center space-x-3">
+                  <span className="text-xs text-slate-400 font-mono">Period ending {profitAndLoss?.as_of_date || 'Current'}</span>
+                  <ExportButtons report="profit-and-loss" />
+                </div>
               </div>
 
               {profitAndLoss ? (
@@ -965,7 +1214,10 @@ export default function App() {
             <div className="bg-[#0b0f19] rounded-2xl border border-slate-800/90 shadow-xl flex flex-col overflow-hidden">
               <div className="p-4 border-b border-slate-800 bg-[#080c15] flex justify-between items-center">
                 <h3 className="font-extrabold text-sm text-white">Balance Sheet</h3>
-                <span className="text-xs text-slate-400 font-mono">As of {balanceSheet?.as_of_date || 'Current'}</span>
+                <div className="flex items-center space-x-3">
+                  <span className="text-xs text-slate-400 font-mono">As of {balanceSheet?.as_of_date || 'Current'}</span>
+                  <ExportButtons report="balance-sheet" />
+                </div>
               </div>
 
               {balanceSheet ? (

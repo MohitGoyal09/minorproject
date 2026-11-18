@@ -2,7 +2,8 @@ from decimal import Decimal
 from datetime import date
 from typing import List, Optional
 from enum import Enum
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+import re
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 
 
 class ExtractionConfidence(str, Enum):
@@ -101,3 +102,52 @@ class ExtractedInvoice(BaseModel):
         if v is None:
             return Decimal("0.00")
         return Decimal(str(v)).quantize(Decimal("0.01"))
+
+
+GSTIN_PATTERN = re.compile(r"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][A-Z0-9]Z[A-Z0-9]$")
+
+
+class InvoiceCorrectionRequest(BaseModel):
+    """Human correction of an extracted invoice (stage 4 review interface).
+
+    The reviewer sends the full corrected document, not a diff, so the stored
+    invoice and the journal proposal derive from one explicit source.
+    """
+
+    invoice_number: str = Field(..., min_length=1, max_length=100)
+    invoice_date: date
+    due_date: Optional[date] = None
+
+    vendor_name: str = Field(..., min_length=1, max_length=255)
+    vendor_gstin: Optional[str] = None
+    buyer_name: Optional[str] = Field(default=None, max_length=255)
+    buyer_gstin: Optional[str] = None
+
+    place_of_supply: Optional[str] = Field(default=None, max_length=100)
+    place_of_supply_state_code: Optional[str] = Field(default=None, max_length=2)
+    payment_terms: Optional[str] = Field(default=None, max_length=100)
+
+    subtotal: Decimal = Field(..., ge=0)
+    total_tax: Decimal = Field(default=Decimal("0.00"), ge=0)
+    total_discount: Decimal = Field(default=Decimal("0.00"), ge=0)
+    grand_total: Decimal = Field(..., ge=0)
+
+    line_items: List[InvoiceLineItem] = Field(..., min_length=1)
+
+    @field_validator("vendor_gstin", "buyer_gstin", mode="before")
+    @classmethod
+    def validate_gstin(cls, value):
+        if value in (None, ""):
+            return None
+        cleaned = str(value).strip().upper()
+        if not GSTIN_PATTERN.match(cleaned):
+            raise ValueError("GSTIN must be a 15-character Indian GSTIN, e.g. 07AAAAA0000A1Z5")
+        return cleaned
+
+    @model_validator(mode="after")
+    def validate_line_items(self):
+        for index, item in enumerate(self.line_items, start=1):
+            for field in ("quantity", "unit_price", "discount_amount", "tax_rate_percent", "tax_amount", "total_amount"):
+                if getattr(item, field) < 0:
+                    raise ValueError(f"Line item {index}: '{field}' cannot be negative")
+        return self

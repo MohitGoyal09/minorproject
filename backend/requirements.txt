@@ -1,0 +1,21 @@
+# Runtime dependencies for the AI Accounting Automation backend.
+# Install:  python -m pip install -r backend/requirements.txt
+fastapi==0.164.0
+uvicorn[standard]==0.54.0
+SQLAlchemy==2.1.9
+pydantic==2.14.3
+python-multipart==0.0.34
+
+# Document intelligence: PDF text layer + layout markdown
+pymupdf==2.1
+pymupdf4llm==2.1
+
+# OCR fallback for scanned / photographed invoices.
+# Pip-only (bundled ONNX models); no system binary such as Tesseract required.
+# 1.2.3 is the last release without a "<3.13" python cap, so it installs on 3.13/3.14.
+rapidocr-onnxruntime==1.2.3
+numpy==2.5.5
+pillow==13.0.0
+
+# Report export (Excel workbooks)
+openpyxl==3.1.5

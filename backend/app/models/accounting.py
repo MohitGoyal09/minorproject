@@ -101,11 +101,16 @@ class Invoice(Base):
     buyer_name = Column(String(255), nullable=True)
     buyer_gstin = Column(String(15), nullable=True)
 
+    place_of_supply = Column(String(100), nullable=True)
+    place_of_supply_state_code = Column(String(2), nullable=True)
+    payment_terms = Column(String(100), nullable=True)
+
     subtotal = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
     total_tax = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
     total_discount = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
     grand_total = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
 
+    confidence = Column(String(20), default="HIGH")
     confidence_score = Column(Numeric(5, 2), default=Decimal("1.00"))
     validation_flags = Column(Text, nullable=True)  # JSON-encoded array of warnings
 

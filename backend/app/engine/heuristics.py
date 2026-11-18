@@ -25,6 +25,15 @@ class HeuristicExtractor:
         r"(?:due\s*date|payment\s*due)[\s*:]+(\d{2}[/-]\d{2}[/-]\d{4})",
     ]
 
+    # Lines that are labels or document titles, never a supplier name.
+    PROSE_STOPWORDS = (
+        "invoice", "tax", "gstin", "gst", "date", "no.", "number", "address",
+        "billed", "buyer", "ship", "place of supply", "total", "subtotal",
+        "amount", "due", "original", "duplicate", "triplicate", "receipt",
+        "statement", "purchase order", "terms", "bank", "account", "ifsc",
+        "pan", "cin", "email", "phone", "mobile", "website", "declaration",
+    )
+
     @classmethod
     def extract_gstin_tags(cls, text: str) -> Dict[str, Optional[str]]:
         gstins = re.findall(cls.GSTIN_PATTERN, text)
@@ -110,4 +119,22 @@ class HeuristicExtractor:
         if buyer_match:
             buyer_name = buyer_match.group(1).strip()
 
+        # 4. Plain-text fallback (OCR output has no markdown headings or bold)
+        if vendor_name == "Unknown Vendor":
+            vendor_name = cls._first_prose_candidate(text)
+
         return (vendor_name, buyer_name)
+
+    @classmethod
+    def _first_prose_candidate(cls, text: str) -> str:
+        """First plausible company line: no digits, two or more words, no label words."""
+        for raw in text.splitlines()[:20]:
+            line = re.sub(r"[*_#|]", " ", raw).strip(" :-\t")
+            if not 3 <= len(line) <= 60:
+                continue
+            if re.search(r"\d", line) or len(line.split()) < 2:
+                continue
+            if any(word in line.lower() for word in cls.PROSE_STOPWORDS):
+                continue
+            return line
+        return "Unknown Vendor"
