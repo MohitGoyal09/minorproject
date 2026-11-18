@@ -130,8 +130,13 @@ class InvoiceCorrectionRequest(BaseModel):
     subtotal: Decimal = Field(..., ge=0)
     total_tax: Decimal = Field(default=Decimal("0.00"), ge=0)
     total_discount: Decimal = Field(default=Decimal("0.00"), ge=0)
+    round_off: Decimal = Field(default=Decimal("0.00"), ge=-100, le=100)
     grand_total: Decimal = Field(..., ge=0)
 
+    currency: str = Field(default="INR", min_length=3, max_length=3)
+    is_settled_or_paid: bool = False
+
+    taxes: List[TaxBreakdown] = Field(default_factory=list)
     line_items: List[InvoiceLineItem] = Field(..., min_length=1)
 
     @field_validator("vendor_gstin", "buyer_gstin", mode="before")

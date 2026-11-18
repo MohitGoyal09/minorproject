@@ -231,3 +231,33 @@ def test_export_journal_as_tally_xml(client):
 def test_export_rejects_unknown_report_and_format(client):
     assert client.get("/api/reports/export/unknown-report").status_code == 404
     assert client.get("/api/reports/export/ledger?format=pdf").status_code == 400
+
+
+def test_a_correction_round_trips_every_economic_field(client):
+    """F-07: POST and GET must describe the same document, down to tax lines."""
+    document_id, processed = upload_and_process(client)
+    payload = correction_payload(processed)
+    payload.update({
+        "payment_terms": "Paid via Cash",
+        "is_settled_or_paid": True,
+        "currency": "INR",
+        "round_off": 0.0,
+        "taxes": [
+            {"tax_type": "CGST", "rate_percent": 9, "taxable_amount": 50000, "tax_amount": 4500},
+            {"tax_type": "SGST", "rate_percent": 9, "taxable_amount": 50000, "tax_amount": 4500},
+        ],
+    })
+    payload["line_items"][0].update({"tax_amount": 4500, "unit": "Pcs", "item_id": "SKU-1"})
+
+    saved = client.put(f"/api/documents/{document_id}/invoice", json=payload)
+    assert saved.status_code == 200, saved.text
+    reloaded = client.get(f"/api/documents/{document_id}")
+
+    before = saved.json()
+    after = reloaded.json()
+    for field in ("payment_terms", "is_settled_or_paid", "currency", "round_off", "grand_total", "total_tax"):
+        assert after["invoice"][field] == before["invoice"][field], field
+    assert after["invoice"]["taxes"] == before["invoice"]["taxes"]
+    for field in ("tax_amount", "unit", "item_id"):
+        assert after["invoice"]["line_items"][0][field] == before["invoice"]["line_items"][0][field], field
+    assert after["proposal"]["transaction_type"] == before["proposal"]["transaction_type"]

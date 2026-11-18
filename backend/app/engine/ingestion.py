@@ -5,7 +5,7 @@ from typing import Tuple
 
 import pymupdf4llm
 
-from app.schemas.invoice import ExtractedInvoice, ExtractionConfidence
+from app.schemas.invoice import ExtractedInvoice, ExtractionConfidence, TaxBreakdown
 from app.engine.table_corrector import TableLayoutCorrector
 from app.engine.heuristics import HeuristicExtractor
 from app.engine.invariants import validate_invoice_arithmetic
@@ -97,6 +97,7 @@ class DocumentIngestionService:
         subtotal = trapped_totals.get("subtotal")
         total_tax = trapped_totals.get("total_tax", Decimal("0.00"))
         total_discount = trapped_totals.get("total_discount", Decimal("0.00"))
+        round_off = trapped_totals.get("round_off", Decimal("0.00"))
         grand_total = trapped_totals.get("grand_total")
 
         # If subtotal not directly extracted, compute sum of line items
@@ -104,7 +105,7 @@ class DocumentIngestionService:
             subtotal = sum((item.total_amount for item in line_items), start=Decimal("0.00"))
 
         if not grand_total:
-            grand_total = subtotal + total_tax - total_discount
+            grand_total = subtotal + total_tax - total_discount + round_off
 
         # 5. Construct Initial Normalized Model
         invoice = ExtractedInvoice(
@@ -120,8 +121,13 @@ class DocumentIngestionService:
             subtotal=subtotal,
             total_tax=total_tax,
             total_discount=total_discount,
+            round_off=round_off,
             grand_total=grand_total,
             line_items=line_items,
+            taxes=[
+                TaxBreakdown(**component)
+                for component in TableLayoutCorrector.extract_tax_components_from_markdown(table_str)
+            ],
             confidence=ExtractionConfidence.MEDIUM if used_ocr else ExtractionConfidence.HIGH
         )
 

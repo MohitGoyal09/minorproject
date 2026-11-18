@@ -32,7 +32,7 @@ HEADER_FIELDS = (
     "buyer_gstin",
     "place_of_supply",
 )
-TOTAL_FIELDS = ("subtotal", "total_tax", "total_discount", "grand_total")
+TOTAL_FIELDS = ("subtotal", "total_tax", "total_discount", "round_off", "grand_total")
 LINE_FIELDS = ("description", "hsn_sac", "quantity", "unit_price", "discount_amount", "total_amount")
 
 
@@ -243,6 +243,14 @@ def score_invoice(
         if all(result.line_checks.get(f"line{index + 1}.{name}", False) for name in LINE_FIELDS):
             result.line_items_matched += 1
 
+    # Transaction classification
+    expected_type = (ground_truth.get("accounting_ground_truth") or {}).get("transaction_type")
+    if expected_type and proposal is not None:
+        actual_type = getattr(proposal.transaction_type, "value", str(proposal.transaction_type))
+        result.field_checks["transaction_type"] = actual_type == expected_type
+        result.expected["transaction_type"] = expected_type
+        result.actual["transaction_type"] = actual_type
+
     # Journal entry (order-independent)
     journal_ground_truth = (ground_truth.get("accounting_ground_truth") or {}).get("journal_lines") or []
     result.journal_expected = len(journal_ground_truth)
@@ -254,7 +262,7 @@ def score_invoice(
             usable = min(count, remaining.get(signature, 0))
             result.journal_matched += usable
             remaining[signature] -= usable
-        result.journal_checks["journal_exact"] = expected_counter == actual_counter
+        result.journal_checks["journal_line_count"] = len(proposal.lines) == len(journal_ground_truth)
         for signature, count in expected_counter.items():
             result.journal_checks[f"journal.{signature}"] = actual_counter.get(signature, 0) >= count
             result.expected[f"journal.{signature}"] = signature
@@ -280,7 +288,9 @@ def evaluate_dataset(
     for truth_file in sorted(ground_truth_dir.glob("*.json")):
         pdf_path = sample_dir / f"{truth_file.stem}.pdf"
         if not pdf_path.exists():
-            continue
+            raise FileNotFoundError(
+                f"Ground truth '{truth_file.name}' has no matching PDF at '{pdf_path}'."
+            )
         ground_truth = json.loads(truth_file.read_text())
         report.rows.append(evaluate_invoice_file(pdf_path, ground_truth))
     return report

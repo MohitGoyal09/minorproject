@@ -518,7 +518,8 @@ def run_comprehensive_validation(
     for idx, item in enumerate(invoice.line_items):
         all_checks.extend(validate_line_item_math(item, idx=idx+1))
 
-    # 2. Document reconciliations
+    # 2. Identity and document reconciliations
+    all_checks.extend(validate_invoice_identity(invoice))
     all_checks.extend(validate_invoice_reconciliation(invoice))
 
     # 3. GST tax treatment consistency
@@ -565,3 +566,65 @@ def run_comprehensive_validation(
         checks=all_checks,
         summary_message=summary
     )
+
+
+def validate_invoice_identity(invoice: ExtractedInvoice) -> List[ValidationCheckResult]:
+    """Fabricated identities must never pass silently.
+
+    The extractor falls back to UNKNOWN_INV, "Unknown Vendor" and today's date
+    when a field is missing. Those placeholders are not invoice facts, so they
+    fail validation and force a correction rather than auto-posting.
+    """
+    results: List[ValidationCheckResult] = []
+
+    number = (invoice.invoice_number or "").strip()
+    number_ok = number.upper() not in ("", "UNKNOWN_INV", "N/A", "NA", "NONE")
+    results.append(ValidationCheckResult(
+        check_name="Invoice Number Present",
+        status=ValidationCheckStatus.PASS if number_ok else ValidationCheckStatus.FAIL,
+        expected_value="Supplier invoice number",
+        actual_value=number or "missing",
+        explanation=(
+            "Invoice number extracted." if number_ok
+            else "No invoice number was found. A placeholder cannot be posted; correct the field."
+        ),
+        source_fields=["invoice_number"],
+        requires_human_review=not number_ok,
+    ))
+
+    vendor = (invoice.vendor_name or "").strip()
+    vendor_ok = vendor.lower() not in ("", "unknown vendor", "n/a")
+    results.append(ValidationCheckResult(
+        check_name="Vendor Present",
+        status=ValidationCheckStatus.PASS if vendor_ok else ValidationCheckStatus.FAIL,
+        expected_value="Supplier name",
+        actual_value=vendor or "missing",
+        explanation=(
+            "Supplier name extracted." if vendor_ok
+            else "No supplier name was found; the ledger cannot name a creditor."
+        ),
+        source_fields=["vendor_name"],
+        requires_human_review=not vendor_ok,
+    ))
+
+    if invoice.vendor_gstin and invoice.buyer_gstin and invoice.vendor_gstin.upper() == invoice.buyer_gstin.upper():
+        results.append(ValidationCheckResult(
+            check_name="Supplier and Recipient GSTIN Distinct",
+            status=ValidationCheckStatus.FAIL,
+            expected_value="Different supplier and recipient GSTINs",
+            actual_value=f"both {invoice.vendor_gstin}",
+            explanation="The same GSTIN was read for both parties, so the state and ITC logic would use the wrong one.",
+            source_fields=["vendor_gstin", "buyer_gstin"],
+            requires_human_review=True,
+        ))
+    else:
+        results.append(ValidationCheckResult(
+            check_name="Supplier and Recipient GSTIN Distinct",
+            status=ValidationCheckStatus.PASS,
+            expected_value="Different supplier and recipient GSTINs",
+            actual_value=f"{invoice.vendor_gstin or 'n/a'} / {invoice.buyer_gstin or 'n/a'}",
+            explanation="Supplier and recipient GSTINs are distinct or absent.",
+            source_fields=["vendor_gstin", "buyer_gstin"],
+        ))
+
+    return results

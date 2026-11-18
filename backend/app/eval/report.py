@@ -11,7 +11,7 @@ from app.eval.evaluator import REPO_ROOT, evaluate_dataset
 
 
 def build_document(report) -> str:
-    return f"""# Evaluation
+    return f"""# Evaluation (regression fixtures)
 
 Every number on this page is measured, not estimated. Regenerate it with:
 
@@ -35,7 +35,23 @@ An invoice is *exact* when every check matches.
 
 ## Results
 
+These are agreement checks against the author's own fixtures, not accuracy on
+unseen documents. Every fixture PDF and its expected JSON are written from the
+same hand-authored dictionary, so a pass proves the pipeline still matches the
+author's intent; it does not prove extraction quality.
+
 {report.to_markdown()}
+
+## What this does not measure
+
+- **Per-line tax components.** The fixtures print a combined tax total, so
+  component extraction cannot be scored here.
+- **Persistence and corrections.** That the stored invoice equals the POSTed one
+  is covered by `tests/test_correction_export.py`, not by this report.
+- **Posting and the ledger.** Covered by `tests/test_posting_boundary.py`.
+- **Reports and exports.** Covered by `tests/test_correction_export.py`.
+- **Unseen layouts, rotations, multi-page tables, handwriting.** Not represented
+  in the fixtures at all.
 
 ## Scan path
 
@@ -55,8 +71,11 @@ cd backend && PYTHONPATH=. python -m app.eval.report    # print this table
 
 - **Four synthetic invoices, not a public benchmark.** The set covers capital
   goods, an intra-state service, a discounted supplies invoice and a five-line
-  inter-state invoice. It does not establish accuracy on unseen real-world
+  intra-state invoice. It does not establish accuracy on unseen real-world
   layouts; that needs SROIE, CORD or DocILE and is future work.
+- **Labels are not independent of the code.** They were written alongside the
+  fixtures and the rule set. Treat the numbers as regression, not measurement.
+
 - **Template-free, not model-based.** Vendor layouts are handled by heuristics and
   geometry, not a trained model. Accuracy on unseen vendors is therefore unknown.
 - **Classification accuracy is partly policy.** The cloud-subscription invoice

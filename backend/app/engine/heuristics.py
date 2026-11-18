@@ -12,8 +12,8 @@ class HeuristicExtractor:
 
     GSTIN_PATTERN = r"\b\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}\b"
     INVOICE_NUM_PATTERNS = [
-        r"(?:invoice\s*no\.?|inv\s*#|invoice\s*number|bill\s*no\.?)[\s*:]+([A-Za-z0-9\-_/]+)",
-        r"\b(INV-\d{4}-\d{3,})\b",
+        r"(?:invoice\s*no\.?|inv\s*#|invoice\s*number|bill\s*no\.?)[\s*:]+([A-Za-z0-9][A-Za-z0-9\-_/.]*(?:\s+[A-Za-z0-9\-_/.]{1,12}){0,3})",
+        r"\b(INV[-.]\d{4}[-.]\d{3,})\b",
     ]
     DATE_PATTERNS = [
         r"(?:invoice\s*date|date|dated)[\s*:]+(\d{4}-\d{2}-\d{2})",
@@ -47,11 +47,14 @@ class HeuristicExtractor:
         if vendor_match and vendor_match.group(1) != result["buyer_gstin"]:
             result["vendor_gstin"] = vendor_match.group(1)
         
-        if not result["vendor_gstin"] and gstins:
-            result["vendor_gstin"] = gstins[0]
-        if not result["buyer_gstin"] and len(gstins) > 1:
-            result["buyer_gstin"] = gstins[1]
-            
+        remaining = [g for g in gstins if g != result["buyer_gstin"]]
+        if not result["vendor_gstin"] and remaining:
+            result["vendor_gstin"] = remaining[0]
+        if not result["buyer_gstin"]:
+            buyer_candidates = [g for g in gstins if g != result["vendor_gstin"]]
+            if buyer_candidates:
+                result["buyer_gstin"] = buyer_candidates[0]
+
         return result
 
     @classmethod
@@ -62,33 +65,52 @@ class HeuristicExtractor:
                 return match.group(1).strip()
         return "UNKNOWN_INV"
 
+    DATE_FORMATS = (
+        "%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y",
+        "%d-%b-%Y", "%d %b %Y", "%m/%d/%Y",
+    )
+
     @classmethod
     def parse_date_safe(cls, date_str: str) -> date:
-        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+        raw = " ".join((date_str or "").replace(",", " ").split())
+        for fmt in cls.DATE_FORMATS:
             try:
-                return datetime.strptime(date_str, fmt).date()
+                return datetime.strptime(raw, fmt).date()
             except ValueError:
                 continue
         return date.today()
 
+    DATE_VALUE = r"(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{4}|\d{1,2}[ -][A-Za-z]{3,9}[ -]\d{4})"
+
     @classmethod
     def extract_dates(cls, text: str) -> Tuple[date, Optional[date]]:
-        inv_date = date.today()
+        """Read the due date and the invoice date from their own labels.
+
+        A due date must never satisfy the invoice-date pattern, otherwise an
+        invoice with only a due date is dated in the future.
+        """
         due_date = None
+        due_match = re.search(r"(?:due\s*date|payment\s*due)[\s*:]+" + cls.DATE_VALUE, text, re.IGNORECASE)
+        if due_match:
+            due_date = cls.parse_date_safe(due_match.group(1))
 
-        for pat in cls.DATE_PATTERNS:
-            match = re.search(pat, text, re.IGNORECASE)
-            if match:
-                inv_date = cls.parse_date_safe(match.group(1).strip())
-                break
+        inv_date = None
+        invoice_match = re.search(
+            r"(?:invoice\s*date|date\s*of\s*invoice|dated)[\s*:]+" + cls.DATE_VALUE,
+            text, re.IGNORECASE,
+        )
+        if invoice_match:
+            inv_date = cls.parse_date_safe(invoice_match.group(1))
 
-        for pat in cls.DUE_DATE_PATTERNS:
-            match = re.search(pat, text, re.IGNORECASE)
-            if match:
-                due_date = cls.parse_date_safe(match.group(1).strip())
-                break
+        if inv_date is None:
+            # An unlabelled date is accepted only when it is not the due date.
+            for candidate in re.finditer(cls.DATE_VALUE, text):
+                parsed = cls.parse_date_safe(candidate.group(1))
+                if due_date is None or parsed != due_date:
+                    inv_date = parsed
+                    break
 
-        return (inv_date, due_date)
+        return (inv_date or date.today(), due_date)
 
     @classmethod
     def extract_entity_names(cls, text: str) -> Tuple[str, Optional[str]]:
@@ -99,7 +121,12 @@ class HeuristicExtractor:
         header_match = re.search(r"#\s*\*{0,2}(.*?)\*{0,2}\s*$", text, re.MULTILINE)
         if header_match:
             candidate = header_match.group(1).strip()
-            if len(candidate) > 2 and "invoice" not in candidate.lower():
+            lowered = candidate.lower()
+            if (
+                len(candidate) > 2
+                and "invoice" not in lowered
+                and not any(word in lowered for word in cls.PROSE_STOPWORDS)
+            ):
                 vendor_name = candidate
 
         # 2. If vendor still unknown, check first bold block `**Company Name**` before GSTIN

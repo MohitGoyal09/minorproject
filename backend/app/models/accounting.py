@@ -108,7 +108,11 @@ class Invoice(Base):
     subtotal = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
     total_tax = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
     total_discount = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
+    round_off = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
     grand_total = Column(Numeric(15, 2), nullable=False, default=Decimal("0.00"))
+
+    currency = Column(String(3), default="INR", nullable=False)
+    is_settled_or_paid = Column(Boolean, default=False, nullable=False)
 
     confidence = Column(String(20), default="HIGH")
     confidence_score = Column(Numeric(5, 2), default=Decimal("1.00"))
@@ -116,6 +120,7 @@ class Invoice(Base):
 
     document = relationship("Document", back_populates="invoice")
     line_items = relationship("LineItem", back_populates="invoice", cascade="all, delete-orphan")
+    taxes = relationship("InvoiceTax", back_populates="invoice", cascade="all, delete-orphan")
 
 
 class LineItem(Base):
@@ -125,15 +130,33 @@ class LineItem(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     invoice_id = Column(String(36), ForeignKey("invoices.id"), nullable=False)
 
+    item_id = Column(String(50), nullable=True)
     description = Column(String(500), nullable=False)
     hsn_sac = Column(String(20), nullable=True)
+    unit = Column(String(20), nullable=True)
     quantity = Column(Numeric(12, 2), default=Decimal("1.00"), nullable=False)
     unit_price = Column(Numeric(15, 2), nullable=False)
     discount_amount = Column(Numeric(15, 2), default=Decimal("0.00"), nullable=False)
     tax_rate_percent = Column(Numeric(5, 2), default=Decimal("0.00"), nullable=False)
+    tax_amount = Column(Numeric(15, 2), default=Decimal("0.00"), nullable=False)
     total_amount = Column(Numeric(15, 2), nullable=False)
 
     invoice = relationship("Invoice", back_populates="line_items")
+
+
+class InvoiceTax(Base):
+    """A persisted tax component (CGST, SGST, IGST, VAT, cess)."""
+    __tablename__ = "invoice_taxes"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    invoice_id = Column(String(36), ForeignKey("invoices.id"), nullable=False)
+
+    tax_type = Column(String(20), nullable=False)
+    rate_percent = Column(Numeric(5, 2), default=Decimal("0.00"), nullable=False)
+    taxable_amount = Column(Numeric(15, 2), default=Decimal("0.00"), nullable=False)
+    tax_amount = Column(Numeric(15, 2), default=Decimal("0.00"), nullable=False)
+
+    invoice = relationship("Invoice", back_populates="taxes")
 
 
 class EntryPostingStatus(str):

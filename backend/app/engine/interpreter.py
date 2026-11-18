@@ -436,7 +436,8 @@ class AccountingInterpreter:
                 ))
 
         # 4. Credit Accounts Payable or Cash
-        if invoice.is_settled_or_paid or (invoice.payment_terms and "cash" in invoice.payment_terms.lower()):
+        is_cash = bool(invoice.is_settled_or_paid or (invoice.payment_terms and "cash" in invoice.payment_terms.lower()))
+        if is_cash:
             applied_rules.append("Payment settled: credited Cash in Hand (Code 1010)")
             lines.append(
                 ProposedJournalLine(
@@ -447,7 +448,6 @@ class AccountingInterpreter:
                     description=f"Immediate cash settlement for invoice #{invoice.invoice_number}"
                 )
             )
-            tx_type = TransactionType.EXPENSE_OFFICE_CASH
         else:
             applied_rules.append(f"Credit purchase: credited Accounts Payable for supplier '{invoice.vendor_name}' (Code {creditor_account_code})")
             lines.append(
@@ -459,8 +459,20 @@ class AccountingInterpreter:
                     description=f"Trade liability to {invoice.vendor_name} for invoice #{invoice.invoice_number}"
                 )
             )
-            is_capital = any(l.account_code in ("1050", "1060", "1070") for l in lines)
-            tx_type = TransactionType.ASSET_ACQUISITION_CREDIT if is_capital else TransactionType.PURCHASE_GOODS_CREDIT
+
+        # Transaction type follows the debit side, not the credit side.
+        capital_codes = {"1050", "1060", "1070"}
+        is_capital = any(line.account_code in capital_codes for line in lines)
+        if is_capital:
+            tx_type = (
+                TransactionType.ASSET_ACQUISITION_CASH if is_cash
+                else TransactionType.ASSET_ACQUISITION_CREDIT
+            )
+        else:
+            tx_type = (
+                TransactionType.EXPENSE_OFFICE_CASH if is_cash
+                else TransactionType.EXPENSE_OFFICE_CREDIT
+            )
 
         # 5. Check for any validation flags or debit/credit imbalance
         if invoice.validation_flags:

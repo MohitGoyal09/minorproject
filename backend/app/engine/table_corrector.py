@@ -26,23 +26,22 @@ class TableLayoutCorrector:
 
     @staticmethod
     def extract_monetary_amount(text: str) -> Optional[Decimal]:
+        """Last monetary token in a cell, ignoring percentages.
+
+        Handles 0, 1, 2 or 3 decimal places and comma grouping. A rate such as
+        "9%" is never an amount, so percentages are removed before matching.
+        """
         if not text:
             return None
-        matches = re.findall(r"\b(?:\d{1,3}(?:,\d{3})*|\d+)\.\d{2}\b", text)
-        if matches:
-            cleaned = matches[-1].replace(",", "")
-            try:
-                return Decimal(cleaned).quantize(Decimal("0.01"))
-            except Exception:
-                pass
-        
-        int_matches = re.findall(r"\b\d+\b", text)
-        if int_matches:
-            try:
-                return Decimal(int_matches[-1]).quantize(Decimal("0.01"))
-            except Exception:
-                pass
-        return None
+        cleaned = text.replace("₹", " ").replace("INR", " ").replace("Rs.", " ")
+        cleaned = re.sub(r"\d+(?:\.\d+)?\s*%", " ", cleaned)
+        matches = re.findall(r"-?\d{1,3}(?:,\d{3})*(?:\.\d{1,3})?|-?\d+(?:\.\d{1,3})?", cleaned)
+        if not matches:
+            return None
+        try:
+            return Decimal(matches[-1].replace(",", "")).quantize(Decimal("0.01"))
+        except Exception:
+            return None
 
     @classmethod
     def is_summary_row(cls, row_cells: List[str]) -> bool:
@@ -56,28 +55,89 @@ class TableLayoutCorrector:
 
     @classmethod
     def extract_summary_totals(cls, rows: List[List[str]]) -> Dict[str, Decimal]:
+        """Map footer labels to totals with explicit precedence.
+
+        Grand total beats every other label on the same row ("Grand Total
+        (incl. GST)" is a grand total, not a tax). An explicit tax row beats the
+        sum of components, so CGST + SGST + "Total Tax" does not double count.
+        """
         totals: Dict[str, Decimal] = {}
+        explicit_tax: Optional[Decimal] = None
+        component_tax = Decimal("0.00")
+
         for row in rows:
             row_str = " ".join(row).lower()
-            row_comp = re.sub(r"[\s\*\_\-]+", "", row_str)
-            amt = None
+            compact = re.sub(r"[\s*_\-]+", "", row_str)
+
+            amount = None
             for cell in reversed(row):
-                found = cls.extract_monetary_amount(cell)
-                if found is not None:
-                    amt = found
+                amount = cls.extract_monetary_amount(cell)
+                if amount is not None:
                     break
+            if amount is None:
+                continue
 
-            if amt is not None:
-                if "subtotal" in row_comp or "subtotal" in row_str:
-                    totals["subtotal"] = amt
-                elif "totaltax" in row_comp or "totaltax" in row_str or "gst" in row_comp:
-                    totals["total_tax"] = amt
-                elif "discount" in row_comp or "discount" in row_str:
-                    totals["total_discount"] = amt
-                elif "grandtotal" in row_comp or "grandtotal" in row_str:
-                    totals["grand_total"] = amt
+            if any(k in compact for k in ("grandtotal", "netpayable", "amountdue", "balancedue", "totalamount", "invoiceamount")):
+                totals["grand_total"] = amount
+            elif "subtotal" in compact:
+                totals["subtotal"] = amount
+            elif "discount" in compact:
+                totals["total_discount"] = amount
+            elif "roundoff" in compact or "rounding" in compact:
+                totals["round_off"] = amount
+            elif "totaltax" in compact or "taxamount" in compact:
+                explicit_tax = amount
+            elif any(k in compact for k in ("cgst", "sgst", "igst", "integratedgst", "cess")):
+                component_tax += amount
 
+        total_tax = explicit_tax if explicit_tax is not None else component_tax
+        if total_tax:
+            totals["total_tax"] = total_tax
         return totals
+
+    @classmethod
+    def extract_tax_components(cls, rows: List[List[str]]) -> List[Dict[str, Decimal]]:
+        """Structured CGST/SGST/IGST rows for the tax table."""
+        components: List[Dict[str, Decimal]] = []
+        for row in rows:
+            row_str = " ".join(row)
+            lower = row_str.lower()
+            tax_type = None
+            if "cgst" in lower:
+                tax_type = "CGST"
+            elif "sgst" in lower:
+                tax_type = "SGST"
+            elif "igst" in lower or "integrated gst" in lower:
+                tax_type = "IGST"
+            elif "cess" in lower:
+                tax_type = "CESS"
+            if tax_type is None:
+                continue
+
+            amount = cls.extract_monetary_amount(row_str)
+            if amount is None:
+                continue
+            rate_match = re.search(r"(\d+(?:\.\d+)?)\s*%", row_str)
+            components.append({
+                "tax_type": tax_type,
+                "rate_percent": Decimal(rate_match.group(1)).quantize(Decimal("0.01")) if rate_match else Decimal("0.00"),
+                "taxable_amount": Decimal("0.00"),
+                "tax_amount": amount,
+            })
+        return components
+
+    @classmethod
+    def extract_tax_components_from_markdown(cls, markdown_table: str) -> List[Dict[str, Decimal]]:
+        rows: List[List[str]] = []
+        for line in (markdown_table or "").split("\n"):
+            stripped = line.strip()
+            if not stripped.startswith("|") or not stripped.endswith("|"):
+                continue
+            cells = [cell.strip() for cell in stripped.split("|")[1:-1]]
+            if cells and all(set(c).issubset({"-", ":", " "}) for c in cells):
+                continue
+            rows.append(cells)
+        return cls.extract_tax_components(rows)
 
     @classmethod
     def reconstruct_table(cls, markdown_table: str) -> Tuple[List[InvoiceLineItem], Dict[str, Decimal]]:

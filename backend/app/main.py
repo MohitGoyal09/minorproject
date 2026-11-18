@@ -17,6 +17,7 @@ from app.models.accounting import (
     Document,
     Invoice,
     LineItem,
+    InvoiceTax,
     JournalEntry,
     JournalLine,
     AuditLog,
@@ -38,6 +39,7 @@ from app.schemas.invoice import (
     ExtractionConfidence,
     InvoiceCorrectionRequest,
     InvoiceLineItem as InvoiceLineItemSchema,
+    TaxBreakdown as TaxBreakdownSchema,
 )
 from app.engine.ingestion import DocumentIngestionService
 from app.engine.interpreter import AccountingInterpreter, EmptyInvoiceError
@@ -127,15 +129,30 @@ def _extracted_invoice_from_db(inv: Invoice) -> ExtractedInvoice:
         subtotal=inv.subtotal,
         total_tax=inv.total_tax,
         total_discount=inv.total_discount,
+        round_off=inv.round_off,
         grand_total=inv.grand_total,
+        currency=inv.currency or "INR",
+        is_settled_or_paid=bool(inv.is_settled_or_paid),
+        taxes=[
+            TaxBreakdownSchema(
+                tax_type=tax.tax_type,
+                rate_percent=tax.rate_percent,
+                taxable_amount=tax.taxable_amount,
+                tax_amount=tax.tax_amount,
+            )
+            for tax in inv.taxes
+        ],
         line_items=[
             InvoiceLineItemSchema(
+                item_id=item.item_id,
                 description=item.description,
                 hsn_sac=item.hsn_sac,
+                unit=item.unit,
                 quantity=item.quantity,
                 unit_price=item.unit_price,
                 discount_amount=item.discount_amount,
                 tax_rate_percent=item.tax_rate_percent,
+                tax_amount=item.tax_amount,
                 total_amount=item.total_amount,
             )
             for item in inv.line_items
@@ -169,7 +186,10 @@ def _persist_invoice(db: Session, doc: Document, tenant: Tenant, extracted: Extr
         subtotal=extracted.subtotal,
         total_tax=extracted.total_tax,
         total_discount=extracted.total_discount,
+        round_off=extracted.round_off,
         grand_total=extracted.grand_total,
+        currency=extracted.currency or "INR",
+        is_settled_or_paid=bool(extracted.is_settled_or_paid),
         confidence=extracted.confidence.value,
         validation_flags="; ".join(extracted.validation_flags) if extracted.validation_flags else None,
     )
@@ -179,13 +199,25 @@ def _persist_invoice(db: Session, doc: Document, tenant: Tenant, extracted: Extr
     for item in extracted.line_items:
         db.add(LineItem(
             invoice_id=db_invoice.id,
+            item_id=item.item_id,
             description=item.description,
             hsn_sac=item.hsn_sac,
+            unit=item.unit,
             quantity=item.quantity,
             unit_price=item.unit_price,
             discount_amount=item.discount_amount,
             tax_rate_percent=item.tax_rate_percent,
+            tax_amount=item.tax_amount,
             total_amount=item.total_amount,
+        ))
+
+    for tax in extracted.taxes:
+        db.add(InvoiceTax(
+            invoice_id=db_invoice.id,
+            tax_type=tax.tax_type,
+            rate_percent=tax.rate_percent,
+            taxable_amount=tax.taxable_amount,
+            tax_amount=tax.tax_amount,
         ))
 
     db.flush()
@@ -252,21 +284,39 @@ def _serialize_invoice(inv: Invoice) -> dict:
         "vendor_gstin": inv.vendor_gstin,
         "buyer_name": inv.buyer_name,
         "buyer_gstin": inv.buyer_gstin,
+        "vendor_address": inv.vendor_address,
         "place_of_supply": inv.place_of_supply,
+        "place_of_supply_state_code": inv.place_of_supply_state_code,
+        "payment_terms": inv.payment_terms,
+        "currency": inv.currency or "INR",
+        "is_settled_or_paid": bool(inv.is_settled_or_paid),
         "confidence": inv.confidence or "HIGH",
         "subtotal": float(inv.subtotal),
         "total_tax": float(inv.total_tax),
         "total_discount": float(inv.total_discount),
+        "round_off": float(inv.round_off),
         "grand_total": float(inv.grand_total),
         "validation_flags": inv.validation_flags.split("; ") if inv.validation_flags else [],
+        "taxes": [
+            {
+                "tax_type": tax.tax_type,
+                "rate_percent": float(tax.rate_percent),
+                "taxable_amount": float(tax.taxable_amount),
+                "tax_amount": float(tax.tax_amount),
+            }
+            for tax in inv.taxes
+        ],
         "line_items": [
             {
+                "item_id": item.item_id,
                 "description": item.description,
                 "hsn_sac": item.hsn_sac,
+                "unit": item.unit,
                 "quantity": float(item.quantity),
                 "unit_price": float(item.unit_price),
                 "discount_amount": float(item.discount_amount),
                 "tax_rate_percent": float(item.tax_rate_percent),
+                "tax_amount": float(item.tax_amount),
                 "total_amount": float(item.total_amount),
             }
             for item in inv.line_items
