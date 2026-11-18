@@ -40,46 +40,46 @@ function LoginScreen({ onSubmit, error, busy }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0C0F] text-slate-100 flex items-center justify-center px-4 font-sans selection:bg-blue-700 selection:text-white">
-      <form onSubmit={submit} className="w-full max-w-sm bg-[#111418] border border-slate-800/90 rounded-xl shadow-xl shadow-black/30 p-7 space-y-5">
+    <div className="min-h-screen bg-[#F5F6F8] text-slate-900 flex items-center justify-center px-4 font-sans selection:bg-blue-700 selection:text-white">
+      <form onSubmit={submit} className="w-full max-w-sm bg-[#FFFFFF] border border-slate-200 rounded-xl shadow-xl shadow-black/30 p-7 space-y-5">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-lg bg-[#1B2028] border border-[#2A313B] flex items-center justify-center text-slate-200">
+          <div className="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center text-white">
             <Landmark className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-sm font-semibold text-white">Invoice-to-Accounting OS</h1>
+            <h1 className="text-sm font-semibold text-slate-900">Invoice-to-Accounting OS</h1>
             <p className="text-[11px] text-slate-500">Sign in to continue</p>
           </div>
         </div>
 
         <div className="space-y-3">
           <label className="block">
-            <span className="text-[11px] font-medium text-slate-400">Email</span>
+            <span className="text-[11px] font-medium text-slate-500">Email</span>
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
               autoComplete="username"
-              className="mt-1 w-full bg-[#0D1014] border border-slate-700 focus:border-blue-400 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
+              className="mt-1 w-full bg-[#F7F8FA] border border-slate-200 focus:border-blue-400 rounded-lg px-3 py-2 text-xs text-slate-900 outline-none transition-colors"
             />
           </label>
           <label className="block">
-            <span className="text-[11px] font-medium text-slate-400">Password</span>
+            <span className="text-[11px] font-medium text-slate-500">Password</span>
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
               autoComplete="current-password"
-              className="mt-1 w-full bg-[#0D1014] border border-slate-700 focus:border-blue-400 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
+              className="mt-1 w-full bg-[#F7F8FA] border border-slate-200 focus:border-blue-400 rounded-lg px-3 py-2 text-xs text-slate-900 outline-none transition-colors"
             />
           </label>
         </div>
 
         {error && (
-          <div className="flex items-start space-x-2 text-[11px] text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-rose-400" />
+          <div className="flex items-start space-x-2 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-rose-700" />
             <span>{error}</span>
           </div>
         )}
@@ -107,7 +107,7 @@ function EditInput({ value, onChange, type = 'text', align = 'left' }) {
       type={type}
       value={value ?? ''}
       onChange={(event) => onChange(event.target.value)}
-      className={`w-full bg-[#0D1014] border border-blue-500/40 hover:border-blue-500/70 focus:border-blue-400 focus:ring-1 focus:ring-blue-500/30 rounded-md px-2 py-1 text-xs text-white font-mono outline-none transition-colors ${alignment}`}
+      className={`w-full bg-[#F7F8FA] border border-blue-300 hover:border-blue-500/70 focus:border-blue-400 focus:ring-1 focus:ring-blue-500/30 rounded-md px-2 py-1 text-xs text-slate-900 font-mono outline-none transition-colors ${alignment}`}
     />
   );
 }
@@ -118,7 +118,7 @@ function ExportButtons({ report }) {
     <div className="flex items-center space-x-1.5">
       <button
         onClick={() => window.open(`/api/reports/export/${report}?format=csv`, '_blank')}
-        className={`${base} bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700`}
+        className={`${base} bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200`}
         title="Download as CSV"
       >
         <Download className="w-3 h-3" />
@@ -126,7 +126,7 @@ function ExportButtons({ report }) {
       </button>
       <button
         onClick={() => window.open(`/api/reports/export/${report}?format=xlsx`, '_blank')}
-        className={`${base} bg-slate-800 hover:bg-slate-700 text-emerald-300 border-slate-700`}
+        className={`${base} bg-slate-100 hover:bg-slate-200 text-emerald-700 border-slate-200`}
         title="Download as Excel workbook"
       >
         <FileSpreadsheet className="w-3 h-3" />
@@ -396,18 +396,18 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0C0F] text-slate-100 flex flex-col font-sans selection:bg-blue-700 selection:text-white antialiased">
+    <div className="min-h-screen bg-[#F5F6F8] text-slate-900 flex flex-col font-sans selection:bg-blue-700 selection:text-white antialiased">
       
       {/* Top Header */}
-      <header className="bg-[#111418]/90 border-b border-slate-800/80 sticky top-0 z-50 backdrop-blur-md">
+      <header className="bg-[#FFFFFF]/90 border-b border-slate-200 sticky top-0 z-50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-xl bg-[#1B2028] border border-[#2A313B] flex items-center justify-center text-slate-200">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white">
               <Landmark className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2.5">
-                <h1 className="text-sm sm:text-base font-semibold text-white tracking-tight">
+                <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                   Invoice-to-Accounting OS
                 </h1>
               </div>
@@ -420,24 +420,24 @@ export default function App() {
           {tenant && (
             <div className="flex items-center space-x-4">
               <div className="text-right hidden sm:block">
-                <span className="text-xs font-semibold text-slate-200 bg-slate-900 border border-slate-700/60 px-2.5 py-1 rounded-md">
+                <span className="text-xs font-semibold text-slate-800 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
                   {tenant.name}
                 </span>
-                <p className="text-[11px] text-slate-400 mt-1 font-mono">
-                  GSTIN: <span className="text-slate-300 font-semibold">{tenant.gstin}</span> ({tenant.currency})
+                <p className="text-[11px] text-slate-500 mt-1 font-mono">
+                  GSTIN: <span className="text-slate-700 font-semibold">{tenant.gstin}</span> ({tenant.currency})
                 </p>
               </div>
-              <div className="h-8 w-px bg-slate-800 hidden sm:block"></div>
-              <div className="flex items-center space-x-2 text-[11px] font-medium text-slate-400">
+              <div className="h-8 w-px bg-slate-100 hidden sm:block"></div>
+              <div className="flex items-center space-x-2 text-[11px] font-medium text-slate-500">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80"></span>
                 <span>Ledger sealed</span>
               </div>
-              <div className="h-8 w-px bg-slate-800 hidden sm:block"></div>
+              <div className="h-8 w-px bg-slate-100 hidden sm:block"></div>
               <div className="flex items-center space-x-2">
-                <span className="text-[11px] text-slate-400 font-mono hidden md:inline">{user?.email}</span>
+                <span className="text-[11px] text-slate-500 font-mono hidden md:inline">{user?.email}</span>
                 <button
                   onClick={handleLogout}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center space-x-1 cursor-pointer transition-colors"
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center space-x-1 cursor-pointer transition-colors"
                   title="Sign out"
                 >
                   <LogOut className="w-3 h-3" />
@@ -449,10 +449,10 @@ export default function App() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 border-t border-slate-800/80 overflow-x-auto scrollbar-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 border-t border-slate-200 overflow-x-auto scrollbar-none">
           {[
             { id: 'invoices', label: '1. Invoices & Ingestion', icon: FileText, count: totalInvoices },
-            { id: 'review', label: '2. Review & Invariant Gate', icon: ShieldCheck, badge: reviewCount > 0 ? `${reviewCount} Attention` : null, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+            { id: 'review', label: '2. Review & Invariant Gate', icon: ShieldCheck, badge: reviewCount > 0 ? `${reviewCount} Attention` : null, badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' },
             { id: 'ledger', label: '3. General Ledger', icon: BookOpen },
             { id: 'trial-balance', label: '4. Trial Balance', icon: Scale },
             { id: 'statements', label: '5. Financial Statements', icon: PieChart },
@@ -466,14 +466,14 @@ export default function App() {
                 onClick={() => handleTabChange(tab.id)}
                 className={`flex items-center space-x-2 py-3 px-3.5 border-b-2 font-medium text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? 'border-blue-500 text-blue-400 font-bold bg-blue-500/5'
-                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                    ? 'border-blue-500 text-blue-700 font-bold bg-blue-50/70'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-blue-700' : 'text-slate-500'}`} />
                 <span>{tab.label}</span>
                 {tab.count !== undefined && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                     {tab.count}
                   </span>
                 )}
@@ -492,11 +492,11 @@ export default function App() {
       {actionMessage && (
         <div className={`py-2.5 px-4 text-xs font-semibold text-center border-b transition-all flex items-center justify-center space-x-2 ${
           actionMessage.type === 'success' 
-            ? 'bg-emerald-950/80 text-emerald-200 border-emerald-800/80' 
-            : 'bg-rose-950/80 text-rose-200 border-rose-800/80'
+            ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+            : 'bg-rose-50 text-rose-800 border-rose-200'
         }`}>
           <span>{actionMessage.text}</span>
-          <button onClick={() => setActionMessage(null)} className="ml-3 font-bold text-slate-400 hover:text-white cursor-pointer px-1">✕</button>
+          <button onClick={() => setActionMessage(null)} className="ml-3 font-bold text-slate-500 hover:text-slate-900 cursor-pointer px-1">✕</button>
         </div>
       )}
 
@@ -509,38 +509,38 @@ export default function App() {
             
             {/* KPI Metric Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#111418] p-4 rounded-xl border border-slate-800/90">
+              <div className="bg-[#FFFFFF] p-4 rounded-xl border border-slate-200">
                 <span className="text-slate-500 text-xs font-medium block">Total invoices</span>
-                <p className="text-2xl font-semibold text-white font-mono mt-1.5 tabular-nums">{totalInvoices}</p>
+                <p className="text-3xl font-bold text-slate-900 font-mono mt-1.5 tabular-nums">{totalInvoices}</p>
                 <p className="text-[11px] text-slate-500 mt-1">Digital and OCR</p>
               </div>
 
-              <div className="bg-[#111418] p-4 rounded-xl border border-slate-800/90">
+              <div className="bg-[#FFFFFF] p-4 rounded-xl border border-slate-200">
                 <span className="text-slate-500 text-xs font-medium block">Posted to ledger</span>
-                <p className="text-2xl font-semibold text-white font-mono mt-1.5 tabular-nums">{postedCount}</p>
+                <p className="text-3xl font-bold text-slate-900 font-mono mt-1.5 tabular-nums">{postedCount}</p>
                 <p className="text-[11px] text-slate-500 mt-1">Audited and reconciled</p>
               </div>
 
-              <div className="bg-[#111418] p-4 rounded-xl border border-slate-800/90">
+              <div className="bg-[#FFFFFF] p-4 rounded-xl border border-slate-200">
                 <span className="text-slate-500 text-xs font-medium block">Awaiting review</span>
-                <p className={`text-2xl font-semibold font-mono mt-1.5 tabular-nums ${reviewCount > 0 ? 'text-amber-400' : 'text-white'}`}>{reviewCount}</p>
+                <p className={`text-2xl font-semibold font-mono mt-1.5 tabular-nums ${reviewCount > 0 ? 'text-amber-700' : 'text-slate-900'}`}>{reviewCount}</p>
                 <p className="text-[11px] text-slate-500 mt-1">Threshold or tax flags</p>
               </div>
 
-              <div className="bg-[#111418] p-4 rounded-xl border border-slate-800/90">
+              <div className="bg-[#FFFFFF] p-4 rounded-xl border border-slate-200">
                 <span className="text-slate-500 text-xs font-medium block">Volume ingested</span>
-                <p className="text-2xl font-semibold text-white font-mono mt-1.5 tabular-nums">₹{totalPayableVolume.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-3xl font-bold text-slate-900 font-mono mt-1.5 tabular-nums">₹{totalPayableVolume.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p className="text-[11px] text-slate-500 mt-1">GST verified</p>
               </div>
             </div>
 
             {/* Upload Area */}
-            <div className="bg-[#111418] p-6 sm:p-8 rounded-xl border-2 border-dashed border-slate-800 hover:border-blue-500/60 transition-colors text-center">
-              <div className="w-11 h-11 rounded-lg bg-[#161A20] border border-[#252B33] flex items-center justify-center text-slate-400 mx-auto mb-3">
+            <div className="bg-[#FFFFFF] p-6 sm:p-8 rounded-xl border-2 border-dashed border-slate-200 hover:border-blue-500/60 transition-colors text-center">
+              <div className="w-11 h-11 rounded-lg bg-[#161A20] border border-[#252B33] flex items-center justify-center text-slate-500 mx-auto mb-3">
                 <Upload className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-semibold text-white">Upload an invoice PDF</h3>
-              <p className="text-xs text-slate-400 max-w-lg mx-auto mt-1.5 mb-5 leading-relaxed">
+              <h3 className="text-base font-semibold text-slate-900">Upload an invoice PDF</h3>
+              <p className="text-xs text-slate-500 max-w-lg mx-auto mt-1.5 mb-5 leading-relaxed">
                 Digital PDFs are read from their text layer. Scans and photographs go through OCR and are marked for review before posting.
               </p>
               
@@ -554,15 +554,15 @@ export default function App() {
             </div>
 
             {/* Invoices List */}
-            <div className="bg-[#111418] rounded-xl border border-slate-800/90 overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-800 flex flex-wrap justify-between items-center gap-3 bg-[#0E1116]">
+            <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-3 bg-[#FAFBFC]">
                 <div>
-                  <h2 className="font-semibold text-white text-sm tracking-wide">Document Ingestion Pipeline</h2>
-                  <p className="text-xs text-slate-400">Processed invoices available for audit, invariant verification, and accounting review</p>
+                  <h2 className="font-semibold text-slate-900 text-sm tracking-wide">Document Ingestion Pipeline</h2>
+                  <p className="text-xs text-slate-500">Processed invoices available for audit, invariant verification, and accounting review</p>
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 text-xs font-medium">
+                  <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 text-xs font-medium">
                     {['ALL', 'REVIEW_REQUIRED', 'PROCESSED', 'POSTED'].map((st) => (
                       <button
                         key={st}
@@ -570,7 +570,7 @@ export default function App() {
                         className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                           filterStatus === st 
                             ? 'bg-blue-600 text-white shadow-xs' 
-                            : 'text-slate-400 hover:text-slate-200'
+                            : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
                         {st === 'ALL' ? 'All' : st.replace('_', ' ')}
@@ -580,9 +580,9 @@ export default function App() {
 
                   <button 
                     onClick={fetchDocuments} 
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-colors cursor-pointer border border-slate-700"
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-colors cursor-pointer border border-slate-200"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
+                    <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
                     <span>Refresh</span>
                   </button>
                 </div>
@@ -595,7 +595,7 @@ export default function App() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#0D1014] text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
+                    <thead className="bg-[#F7F8FA] text-slate-500 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
                       <tr>
                         <th className="py-3 px-5">Source File</th>
                         <th className="py-3 px-4">Invoice #</th>
@@ -605,27 +605,27 @@ export default function App() {
                         <th className="py-3 px-5 text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 font-sans">
+                    <tbody className="divide-y divide-slate-100/60 font-sans">
                       {filteredDocuments.map((doc) => (
-                        <tr key={doc.id} className="hover:bg-slate-800/40 transition-colors">
-                          <td className="py-3.5 px-5 font-semibold text-slate-200 flex items-center space-x-2.5">
-                            <FileText className="w-4 h-4 text-blue-400 shrink-0" />
+                        <tr key={doc.id} className="hover:bg-slate-100/40 transition-colors">
+                          <td className="py-3.5 px-5 font-semibold text-slate-800 flex items-center space-x-2.5">
+                            <FileText className="w-4 h-4 text-blue-700 shrink-0" />
                             <span className="truncate max-w-xs">{doc.filename}</span>
                           </td>
-                          <td className="py-3.5 px-4 text-slate-300 font-mono text-xs">{doc.invoice_number || '—'}</td>
-                          <td className="py-3.5 px-4 text-slate-300 font-medium">{doc.vendor_name || '—'}</td>
-                          <td className="py-3.5 px-4 text-right font-bold text-white font-mono text-xs">
+                          <td className="py-3.5 px-4 text-slate-700 font-mono text-xs">{doc.invoice_number || '—'}</td>
+                          <td className="py-3.5 px-4 text-slate-700 font-medium">{doc.vendor_name || '—'}</td>
+                          <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono text-xs">
                             {doc.grand_total ? `₹${doc.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}` : '—'}
                           </td>
                           <td className="py-3.5 px-4">
                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                              doc.status === 'POSTED' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                              doc.status === 'PROCESSED' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                              doc.status === 'REVIEW_REQUIRED' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' :
-                              'bg-slate-800 text-slate-400 border-slate-700'
+                              doc.status === 'POSTED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              doc.status === 'PROCESSED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                              doc.status === 'REVIEW_REQUIRED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-slate-100 text-slate-500 border-slate-200'
                             }`}>
-                              {doc.status === 'REVIEW_REQUIRED' && <AlertTriangle className="w-3 h-3 mr-1 text-amber-400" />}
-                              {doc.status === 'POSTED' && <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-400" />}
+                              {doc.status === 'REVIEW_REQUIRED' && <AlertTriangle className="w-3 h-3 mr-1 text-amber-700" />}
+                              {doc.status === 'POSTED' && <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-700" />}
                               {doc.status}
                             </span>
                           </td>
@@ -641,10 +641,10 @@ export default function App() {
                             )}
                             <button
                               onClick={() => handleSelectDocument(doc.id)}
-                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-md border border-slate-700 transition-colors cursor-pointer inline-flex items-center space-x-1"
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-md border border-slate-200 transition-colors cursor-pointer inline-flex items-center space-x-1"
                             >
                               <span>Review Proposal</span>
-                              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                              <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
                             </button>
                           </td>
                         </tr>
@@ -661,10 +661,10 @@ export default function App() {
         {activeTab === 'review' && (
           <div>
             {!selectedDoc ? (
-              <div className="bg-[#111418] p-16 text-center rounded-xl border border-slate-800">
+              <div className="bg-[#FFFFFF] p-16 text-center rounded-xl border border-slate-200">
                 <ShieldCheck className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <h3 className="text-base font-semibold text-white">No Document Selected</h3>
-                <p className="text-xs text-slate-400 mt-1 mb-5">Please select an invoice from Tab 1 to inspect extraction and double-entry proposals.</p>
+                <h3 className="text-base font-semibold text-slate-900">No Document Selected</h3>
+                <p className="text-xs text-slate-500 mt-1 mb-5">Please select an invoice from Tab 1 to inspect extraction and double-entry proposals.</p>
                 <button onClick={() => setActiveTab('invoices')} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg cursor-pointer">
                   Back to Invoices
                 </button>
@@ -673,31 +673,31 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 
                 {/* LEFT PANEL: Extracted Document & Line Items */}
-                <div className="bg-[#111418] rounded-xl border border-slate-800/90 flex flex-col overflow-hidden">
-                  <div className="p-4 border-b border-slate-800 bg-[#0E1116] flex justify-between items-center">
+                <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 flex flex-col overflow-hidden">
+                  <div className="p-4 border-b border-slate-200 bg-[#FAFBFC] flex justify-between items-center">
                     <div>
-                      <h2 className="text-sm font-bold text-white flex items-center space-x-2">
-                        <FileText className="w-4 h-4 text-blue-400" />
+                      <h2 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                        <FileText className="w-4 h-4 text-blue-700" />
                         <span>Extracted Document Intelligence</span>
                       </h2>
-                      <p className="text-[11px] text-slate-400 font-mono truncate max-w-xs">{selectedDoc.filename}</p>
+                      <p className="text-[11px] text-slate-500 font-mono truncate max-w-xs">{selectedDoc.filename}</p>
                     </div>
                     <div className="flex items-center space-x-2">
                       {selectedDoc.invoice?.confidence && selectedDoc.invoice.confidence !== 'HIGH' && (
                         <span
-                          className="px-2 py-1 text-[10px] font-semibold rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                          className="px-2 py-1 text-[10px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200"
                           title="Fields must be checked against the original document before posting."
                         >
                           {selectedDoc.invoice.confidence === 'LOW' ? 'LOW CONFIDENCE' : 'OCR — VERIFY'}
                         </span>
                       )}
-                      <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-900 text-slate-300 border border-slate-700">
+                      <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                         Pipeline: {selectedDoc.status}
                       </span>
                       {selectedDoc.invoice && selectedDoc.status !== 'POSTED' && !editMode && (
                         <button
                           onClick={startEditing}
-                          className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/40 flex items-center space-x-1 cursor-pointer transition-colors"
+                          className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-700 border border-blue-300 flex items-center space-x-1 cursor-pointer transition-colors"
                         >
                           <Pencil className="w-3 h-3" />
                           <span>Correct</span>
@@ -715,7 +715,7 @@ export default function App() {
                           </button>
                           <button
                             onClick={cancelEditing}
-                            className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center space-x-1 cursor-pointer transition-colors"
+                            className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center space-x-1 cursor-pointer transition-colors"
                           >
                             <X className="w-3 h-3" />
                             <span>Cancel</span>
@@ -728,25 +728,25 @@ export default function App() {
                   {selectedDoc.invoice ? (
                     <div className="p-5 space-y-5 flex-1">
                       {/* Metadata Grid */}
-                      <div className="grid grid-cols-2 gap-3 bg-[#0D1014] p-3.5 rounded-xl border border-slate-800/80 text-xs">
+                      <div className="grid grid-cols-2 gap-3 bg-[#F7F8FA] p-3.5 rounded-xl border border-slate-200 text-xs">
                         <div>
-                          <span className="text-slate-400 block text-[11px] font-medium">Invoice Number</span>
+                          <span className="text-slate-500 block text-[11px] font-medium">Invoice Number</span>
                           {editMode ? (
                             <div className="mt-1"><EditInput value={draft.invoice_number} onChange={(v) => updateDraft('invoice_number', v)} /></div>
                           ) : (
-                            <p className="font-semibold text-white font-mono text-xs mt-0.5">{selectedDoc.invoice.invoice_number}</p>
+                            <p className="font-semibold text-slate-900 font-mono text-xs mt-0.5">{selectedDoc.invoice.invoice_number}</p>
                           )}
                         </div>
                         <div>
-                          <span className="text-slate-400 block text-[11px] font-medium">Invoice Date</span>
+                          <span className="text-slate-500 block text-[11px] font-medium">Invoice Date</span>
                           {editMode ? (
                             <div className="mt-1"><EditInput type="date" value={draft.invoice_date} onChange={(v) => updateDraft('invoice_date', v)} /></div>
                           ) : (
-                            <p className="font-semibold text-white text-xs mt-0.5">{selectedDoc.invoice.invoice_date}</p>
+                            <p className="font-semibold text-slate-900 text-xs mt-0.5">{selectedDoc.invoice.invoice_date}</p>
                           )}
                         </div>
                         <div>
-                          <span className="text-slate-400 block text-[11px] font-medium">Vendor / Supplier</span>
+                          <span className="text-slate-500 block text-[11px] font-medium">Vendor / Supplier</span>
                           {editMode ? (
                             <div className="space-y-1 mt-1">
                               <EditInput value={draft.vendor_name} onChange={(v) => updateDraft('vendor_name', v)} />
@@ -754,13 +754,13 @@ export default function App() {
                             </div>
                           ) : (
                             <>
-                              <p className="font-bold text-slate-200 mt-0.5">{selectedDoc.invoice.vendor_name}</p>
-                              <p className="text-slate-400 font-mono text-[10px] mt-0.5">GSTIN: {selectedDoc.invoice.vendor_gstin || 'N/A'}</p>
+                              <p className="font-bold text-slate-800 mt-0.5">{selectedDoc.invoice.vendor_name}</p>
+                              <p className="text-slate-500 font-mono text-[10px] mt-0.5">GSTIN: {selectedDoc.invoice.vendor_gstin || 'N/A'}</p>
                             </>
                           )}
                         </div>
                         <div>
-                          <span className="text-slate-400 block text-[11px] font-medium">Buyer / Customer</span>
+                          <span className="text-slate-500 block text-[11px] font-medium">Buyer / Customer</span>
                           {editMode ? (
                             <div className="space-y-1 mt-1">
                               <EditInput value={draft.buyer_name} onChange={(v) => updateDraft('buyer_name', v)} />
@@ -768,27 +768,27 @@ export default function App() {
                             </div>
                           ) : (
                             <>
-                              <p className="font-bold text-slate-200 mt-0.5">{selectedDoc.invoice.buyer_name || 'Modern Tech Solutions'}</p>
-                              <p className="text-slate-400 font-mono text-[10px] mt-0.5">GSTIN: {selectedDoc.invoice.buyer_gstin || 'N/A'}</p>
+                              <p className="font-bold text-slate-800 mt-0.5">{selectedDoc.invoice.buyer_name || 'Modern Tech Solutions'}</p>
+                              <p className="text-slate-500 font-mono text-[10px] mt-0.5">GSTIN: {selectedDoc.invoice.buyer_gstin || 'N/A'}</p>
                             </>
                           )}
                         </div>
                         {editMode ? (
-                          <div className="col-span-2 pt-1 border-t border-slate-800/60 grid grid-cols-2 gap-3">
+                          <div className="col-span-2 pt-1 border-t border-slate-200 grid grid-cols-2 gap-3">
                             <div>
-                              <span className="text-slate-400 block text-[11px] font-medium">Due Date</span>
+                              <span className="text-slate-500 block text-[11px] font-medium">Due Date</span>
                               <div className="mt-1"><EditInput type="date" value={draft.due_date} onChange={(v) => updateDraft('due_date', v)} /></div>
                             </div>
                             <div>
-                              <span className="text-slate-400 block text-[11px] font-medium">Place of Supply</span>
+                              <span className="text-slate-500 block text-[11px] font-medium">Place of Supply</span>
                               <div className="mt-1"><EditInput value={draft.place_of_supply} onChange={(v) => updateDraft('place_of_supply', v)} /></div>
                             </div>
                           </div>
                         ) : (
                           (selectedDoc.invoice.place_of_supply || selectedDoc.invoice.due_date) && (
-                            <div className="col-span-2 pt-1 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
-                              <span className="text-slate-400">Place of Supply: <span className="font-mono text-blue-400 font-bold">{selectedDoc.invoice.place_of_supply || 'N/A'}</span></span>
-                              <span className="text-slate-400">Due: <span className="font-mono text-slate-300">{selectedDoc.invoice.due_date || 'N/A'}</span></span>
+                            <div className="col-span-2 pt-1 border-t border-slate-200 flex items-center justify-between text-[11px]">
+                              <span className="text-slate-500">Place of Supply: <span className="font-mono text-blue-700 font-bold">{selectedDoc.invoice.place_of_supply || 'N/A'}</span></span>
+                              <span className="text-slate-500">Due: <span className="font-mono text-slate-700">{selectedDoc.invoice.due_date || 'N/A'}</span></span>
                             </div>
                           )
                         )}
@@ -797,17 +797,17 @@ export default function App() {
                       {/* Reconstructed Line Items Table */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
-                          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                             Reconstructed Line Items (Yao et al. Corrected)
                           </h4>
-                          <span className="text-[10px] text-blue-300 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded font-mono">
+                          <span className="text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded font-mono">
                             {selectedDoc.invoice.line_items.length} Items Captured
                           </span>
                         </div>
 
-                        <div className="border border-slate-800 rounded-xl overflow-hidden bg-[#0D1014]">
+                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-[#F7F8FA]">
                           <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-900/90 text-slate-300 font-semibold border-b border-slate-800 text-[11px]">
+                            <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 text-[11px]">
                               <tr>
                                 <th className="py-2.5 px-3">Item Description</th>
                                 <th className="py-2.5 px-2">HSN</th>
@@ -817,35 +817,35 @@ export default function App() {
                                 <th className="py-2.5 px-3 text-right">Total</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-800/50">
+                            <tbody className="divide-y divide-slate-100">
                               {(editMode ? draft.line_items : selectedDoc.invoice.line_items).map((item, idx) => (
-                                <tr key={idx} className="hover:bg-slate-800/30">
-                                  <td className="py-2.5 px-3 font-semibold text-slate-200">
+                                <tr key={idx} className="hover:bg-slate-50">
+                                  <td className="py-2.5 px-3 font-semibold text-slate-800">
                                     {editMode
                                       ? <EditInput value={item.description} onChange={(v) => updateDraftLine(idx, 'description', v)} />
                                       : item.description}
                                   </td>
-                                  <td className="py-2.5 px-2 text-slate-400 font-mono text-[11px]">
+                                  <td className="py-2.5 px-2 text-slate-500 font-mono text-[11px]">
                                     {editMode
                                       ? <EditInput value={item.hsn_sac} onChange={(v) => updateDraftLine(idx, 'hsn_sac', v)} />
                                       : (item.hsn_sac || '-')}
                                   </td>
-                                  <td className="py-2.5 px-2 text-right font-mono text-slate-300">
+                                  <td className="py-2.5 px-2 text-right font-mono text-slate-700">
                                     {editMode
                                       ? <EditInput value={item.quantity} align="right" onChange={(v) => updateDraftLine(idx, 'quantity', v)} />
                                       : item.quantity}
                                   </td>
-                                  <td className="py-2.5 px-2 text-right font-mono text-slate-300">
+                                  <td className="py-2.5 px-2 text-right font-mono text-slate-700">
                                     {editMode
                                       ? <EditInput value={item.unit_price} align="right" onChange={(v) => updateDraftLine(idx, 'unit_price', v)} />
                                       : `₹${item.unit_price.toFixed(2)}`}
                                   </td>
-                                  <td className="py-2.5 px-2 text-right font-mono text-slate-400">
+                                  <td className="py-2.5 px-2 text-right font-mono text-slate-500">
                                     {editMode
                                       ? <EditInput value={item.discount_amount} align="right" onChange={(v) => updateDraftLine(idx, 'discount_amount', v)} />
                                       : (item.discount_amount > 0 ? `₹${item.discount_amount.toFixed(2)}` : '—')}
                                   </td>
-                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-white">
+                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
                                     {editMode
                                       ? <EditInput value={item.total_amount} align="right" onChange={(v) => updateDraftLine(idx, 'total_amount', v)} />
                                       : `₹${item.total_amount.toFixed(2)}`}
@@ -858,33 +858,33 @@ export default function App() {
                       </div>
 
                       {/* Totals Summary */}
-                      <div className="bg-[#0D1014] p-4 rounded-xl border border-slate-800 text-xs space-y-1.5 font-mono">
+                      <div className="bg-[#F7F8FA] p-4 rounded-xl border border-slate-200 text-xs space-y-1.5 font-mono">
                         <div className="flex justify-between items-center font-sans gap-3">
-                          <span className="text-slate-400">Taxable Subtotal:</span>
+                          <span className="text-slate-500">Taxable Subtotal:</span>
                           {editMode
                             ? <div className="w-32"><EditInput value={draft.subtotal} align="right" onChange={(v) => updateDraft('subtotal', v)} /></div>
-                            : <span className="font-semibold text-slate-200 font-mono">₹{selectedDoc.invoice.subtotal.toFixed(2)}</span>}
+                            : <span className="font-semibold text-slate-800 font-mono">₹{selectedDoc.invoice.subtotal.toFixed(2)}</span>}
                         </div>
                         <div className="flex justify-between items-center font-sans gap-3">
-                          <span className="text-slate-400">Total Tax (GST):</span>
+                          <span className="text-slate-500">Total Tax (GST):</span>
                           {editMode
                             ? <div className="w-32"><EditInput value={draft.total_tax} align="right" onChange={(v) => updateDraft('total_tax', v)} /></div>
-                            : <span className="font-semibold text-slate-200 font-mono">₹{selectedDoc.invoice.total_tax.toFixed(2)}</span>}
+                            : <span className="font-semibold text-slate-800 font-mono">₹{selectedDoc.invoice.total_tax.toFixed(2)}</span>}
                         </div>
-                        <div className="flex justify-between items-center font-sans text-emerald-400 gap-3">
+                        <div className="flex justify-between items-center font-sans text-emerald-700 gap-3">
                           <span>Total Discount:</span>
                           {editMode
                             ? <div className="w-32"><EditInput value={draft.total_discount} align="right" onChange={(v) => updateDraft('total_discount', v)} /></div>
                             : <span className="font-mono">-₹{selectedDoc.invoice.total_discount.toFixed(2)}</span>}
                         </div>
-                        <div className="flex justify-between items-center pt-2.5 border-t border-slate-800 font-bold text-sm text-white font-sans gap-3">
+                        <div className="flex justify-between items-center pt-2.5 border-t border-slate-200 font-bold text-sm text-slate-900 font-sans gap-3">
                           <span>Grand Total Payable:</span>
                           {editMode
                             ? <div className="w-32"><EditInput value={draft.grand_total} align="right" onChange={(v) => updateDraft('grand_total', v)} /></div>
-                            : <span className="font-mono text-blue-400 font-semibold text-base">₹{selectedDoc.invoice.grand_total.toFixed(2)}</span>}
+                            : <span className="font-mono text-blue-700 font-semibold text-base">₹{selectedDoc.invoice.grand_total.toFixed(2)}</span>}
                         </div>
                         {editMode && (
-                          <p className="text-[10px] text-amber-300/90 pt-1.5 border-t border-slate-800/60 leading-relaxed">
+                          <p className="text-[10px] text-amber-700/90 pt-1.5 border-t border-slate-200 leading-relaxed">
                             Sum of line totals: ₹{draft.line_items.reduce((acc, item) => acc + (Number(item.total_amount) || 0), 0).toFixed(2)}.
                             Keep the totals consistent, or validation will block posting.
                           </p>
@@ -899,19 +899,19 @@ export default function App() {
                 </div>
 
                 {/* RIGHT PANEL: AI Accounting Proposal & Invariant Verification */}
-                <div className="bg-[#111418] rounded-xl border border-slate-800/90 flex flex-col overflow-hidden">
-                  <div className="p-4 border-b border-slate-800 bg-[#0E1116] flex justify-between items-center">
+                <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 flex flex-col overflow-hidden">
+                  <div className="p-4 border-b border-slate-200 bg-[#FAFBFC] flex justify-between items-center">
                     <div>
-                      <h2 className="text-sm font-bold text-white flex items-center space-x-2">
-                        <Scale className="w-4 h-4 text-emerald-400" />
+                      <h2 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                        <Scale className="w-4 h-4 text-emerald-700" />
                         <span>Proposed Double-Entry Journal</span>
                       </h2>
-                      <p className="text-[11px] text-slate-400">Multi-Stage Deterministic Invariant Verified</p>
+                      <p className="text-[11px] text-slate-500">Multi-Stage Deterministic Invariant Verified</p>
                     </div>
 
                     {selectedDoc.proposal && (
-                      <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
                         <span>Debits == Credits</span>
                       </span>
                     )}
@@ -921,23 +921,23 @@ export default function App() {
                     <div className="p-5 space-y-5 flex-1 flex flex-col justify-between">
                       <div className="space-y-4">
                         {/* Transaction Type & Narration */}
-                        <div className="bg-[#0D1014] p-3.5 rounded-xl border border-slate-800 text-xs space-y-2">
+                        <div className="bg-[#F7F8FA] p-3.5 rounded-xl border border-slate-200 text-xs space-y-2">
                           <div className="flex items-center space-x-2">
-                            <span className="text-slate-400 font-medium">Classification:</span>
-                            <span className="font-mono text-[11px] font-bold text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/30">
+                            <span className="text-slate-500 font-medium">Classification:</span>
+                            <span className="font-mono text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                               {selectedDoc.proposal.transaction_type}
                             </span>
                           </div>
                           <div>
-                            <span className="text-slate-400 font-medium">Narration:</span>
-                            <p className="text-slate-200 italic mt-0.5 leading-relaxed">{selectedDoc.proposal.narration}</p>
+                            <span className="text-slate-500 font-medium">Narration:</span>
+                            <p className="text-slate-800 italic mt-0.5 leading-relaxed">{selectedDoc.proposal.narration}</p>
                           </div>
                         </div>
 
                         {/* Double-Entry Table */}
-                        <div className="border border-slate-800 rounded-xl overflow-hidden bg-[#0D1014]">
+                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-[#F7F8FA]">
                           <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-900/90 text-slate-300 font-semibold border-b border-slate-800 text-[11px]">
+                            <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 text-[11px]">
                               <tr>
                                 <th className="py-2.5 px-3.5">Account Name</th>
                                 <th className="py-2.5 px-2">Code</th>
@@ -945,39 +945,39 @@ export default function App() {
                                 <th className="py-2.5 px-3.5 text-right">Credit (Cr)</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-800/50">
+                            <tbody className="divide-y divide-slate-100">
                               {selectedDoc.proposal.lines.map((line, idx) => (
-                                <tr key={idx} className="hover:bg-slate-800/30">
-                                  <td className="py-2.5 px-3.5 font-semibold text-slate-200">
+                                <tr key={idx} className="hover:bg-slate-50">
+                                  <td className="py-2.5 px-3.5 font-semibold text-slate-800">
                                     <div className="flex items-center space-x-2">
                                       <span className={`w-2 h-2 rounded-full shrink-0 ${line.entry_type === 'DEBIT' ? 'bg-blue-400' : 'bg-emerald-400'}`}></span>
                                       <span>{line.account_name}</span>
                                     </div>
                                   </td>
-                                  <td className="py-2.5 px-2 text-slate-400 font-mono text-[11px] font-bold">{line.account_code}</td>
-                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-blue-400">
+                                  <td className="py-2.5 px-2 text-slate-500 font-mono text-[11px] font-bold">{line.account_code}</td>
+                                  <td className="py-2.5 px-3 text-right font-mono font-bold text-blue-700">
                                     {line.entry_type === 'DEBIT' ? `₹${line.amount.toFixed(2)}` : '—'}
                                   </td>
-                                  <td className="py-2.5 px-3.5 text-right font-mono font-bold text-emerald-400">
+                                  <td className="py-2.5 px-3.5 text-right font-mono font-bold text-emerald-700">
                                     {line.entry_type === 'CREDIT' ? `₹${line.amount.toFixed(2)}` : '—'}
                                   </td>
                                 </tr>
                               ))}
                             </tbody>
-                            <tfoot className="bg-[#0A0C0F] font-bold border-t-2 border-slate-800 text-xs">
+                            <tfoot className="bg-[#F5F6F8] font-bold border-t-2 border-slate-200 text-xs">
                               <tr>
-                                <td colSpan="2" className="py-3 px-3.5 text-slate-400">Exact Balance Equality</td>
-                                <td className="py-3 px-3 text-right font-mono text-blue-300 font-semibold">₹{selectedDoc.proposal.total_debits.toFixed(2)}</td>
-                                <td className="py-3 px-3.5 text-right font-mono text-emerald-300 font-semibold">₹{selectedDoc.proposal.total_credits.toFixed(2)}</td>
+                                <td colSpan="2" className="py-3 px-3.5 text-slate-500">Exact Balance Equality</td>
+                                <td className="py-3 px-3 text-right font-mono text-blue-700 font-semibold">₹{selectedDoc.proposal.total_debits.toFixed(2)}</td>
+                                <td className="py-3 px-3.5 text-right font-mono text-emerald-700 font-semibold">₹{selectedDoc.proposal.total_credits.toFixed(2)}</td>
                               </tr>
                             </tfoot>
                           </table>
                         </div>
 
                         {/* Applied Policies & Reasoning */}
-                        <div className="text-xs bg-[#0D1014] p-3.5 rounded-xl border border-slate-800 space-y-1.5">
-                          <span className="font-bold text-slate-300 block text-[11px] uppercase tracking-wider">Applied Accounting Rules:</span>
-                          <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-400">
+                        <div className="text-xs bg-[#F7F8FA] p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                          <span className="font-bold text-slate-700 block text-[11px] uppercase tracking-wider">Applied Accounting Rules:</span>
+                          <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-500">
                             {selectedDoc.proposal.applied_rules?.map((rule, idx) => (
                               <li key={idx} className="leading-relaxed">{rule}</li>
                             ))}
@@ -986,18 +986,18 @@ export default function App() {
 
                         {/* Deterministic Invariant & Compliance Gate Report */}
                         {selectedDoc.validation_report && (
-                          <div className="bg-[#0D1014] p-4 rounded-xl border border-slate-800 space-y-3">
+                          <div className="bg-[#F7F8FA] p-4 rounded-xl border border-slate-200 space-y-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2">
-                                <ShieldCheck className="w-4 h-4 text-blue-400" />
-                                <span className="font-bold text-slate-200 text-xs">Multi-Stage Invariant Verification</span>
+                                <ShieldCheck className="w-4 h-4 text-blue-700" />
+                                <span className="font-bold text-slate-800 text-xs">Multi-Stage Invariant Verification</span>
                               </div>
                               <span className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-full border ${
                                 selectedDoc.validation_report.has_blocking_failures 
-                                  ? 'bg-rose-500/10 text-rose-300 border-rose-500/40' 
+                                  ? 'bg-rose-50 text-rose-700 border-rose-300' 
                                   : selectedDoc.proposal?.requires_human_review 
-                                    ? 'bg-amber-500/10 text-amber-300 border-amber-500/40' 
-                                    : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/40'
+                                    ? 'bg-amber-50 text-amber-700 border-amber-300' 
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-500/40'
                               }`}>
                                 {selectedDoc.validation_report.has_blocking_failures 
                                   ? 'POSTING BLOCKED' 
@@ -1007,18 +1007,18 @@ export default function App() {
                               </span>
                             </div>
 
-                            <p className="text-[11px] text-slate-300 font-medium">
+                            <p className="text-[11px] text-slate-700 font-medium">
                               {selectedDoc.validation_report.summary_message}
                             </p>
 
                             {/* Review Reasons Callout */}
                             {selectedDoc.proposal?.requires_human_review && selectedDoc.proposal.review_reasons?.length > 0 && (
-                              <div className="p-3 bg-amber-950/20 border border-amber-500/30 rounded-lg text-amber-300 text-[11px] space-y-1">
-                                <div className="font-bold flex items-center space-x-1.5 text-amber-200">
-                                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-[11px] space-y-1">
+                                <div className="font-bold flex items-center space-x-1.5 text-amber-800">
+                                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-700" />
                                   <span>Accountant Attention Points:</span>
                                 </div>
-                                <ul className="list-disc list-inside space-y-0.5 text-amber-200/90 pl-1 leading-relaxed">
+                                <ul className="list-disc list-inside space-y-0.5 text-amber-800 pl-1 leading-relaxed">
                                   {selectedDoc.proposal.review_reasons.map((r, i) => (
                                     <li key={i}>{r}</li>
                                   ))}
@@ -1033,20 +1033,20 @@ export default function App() {
                                   key={idx} 
                                   className={`p-2 rounded-lg text-[11px] border flex flex-col space-y-1 ${
                                     check.status === 'FAIL' 
-                                      ? 'bg-rose-950/20 border-rose-900/40 text-rose-300' 
+                                      ? 'bg-rose-50 border-rose-200 text-rose-700' 
                                       : check.status === 'WARNING' 
-                                        ? 'bg-amber-950/20 border-amber-900/40 text-amber-300' 
-                                        : 'bg-slate-900/70 border-slate-800 text-slate-300'
+                                        ? 'bg-amber-50 border-amber-200 text-amber-700' 
+                                        : 'bg-slate-50 border-slate-200 text-slate-700'
                                   }`}
                                 >
                                   <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-1.5 font-semibold text-slate-200">
+                                    <div className="flex items-center space-x-1.5 font-semibold text-slate-800">
                                       {check.status === 'FAIL' ? (
-                                        <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                        <XCircle className="w-3.5 h-3.5 text-rose-700 shrink-0" />
                                       ) : check.status === 'WARNING' ? (
-                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
                                       ) : (
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                                       )}
                                       <span>{check.check_name}</span>
                                     </div>
@@ -1054,11 +1054,11 @@ export default function App() {
                                       {check.status}
                                     </span>
                                   </div>
-                                  <p className="text-[10px] text-slate-400 pl-5 leading-normal">
+                                  <p className="text-[10px] text-slate-500 pl-5 leading-normal">
                                     {check.explanation}
                                   </p>
                                   {check.difference && (
-                                    <div className="pl-5 text-[10px] font-mono text-rose-400 font-bold">
+                                    <div className="pl-5 text-[10px] font-mono text-rose-700 font-bold">
                                       Discrepancy: ₹{check.difference} (Expected: {check.expected_value}, Actual: {check.actual_value})
                                     </div>
                                   )}
@@ -1070,20 +1070,20 @@ export default function App() {
                       </div>
 
                       {/* Approval Action */}
-                      <div className="pt-4 border-t border-slate-800">
+                      <div className="pt-4 border-t border-slate-200">
                         {editMode ? (
-                          <div className="p-3.5 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-300 text-xs font-bold flex items-center justify-center space-x-2">
+                          <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-xs font-bold flex items-center justify-center space-x-2">
                             <Pencil className="w-4 h-4 shrink-0" />
                             <span>Save or cancel your corrections before posting to the ledger.</span>
                           </div>
                         ) : selectedDoc.status === 'POSTED' ? (
-                          <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs font-bold flex items-center justify-center space-x-2">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs font-bold flex items-center justify-center space-x-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
                             <span>This entry has been approved and permanently posted to the General Ledger.</span>
                           </div>
                         ) : selectedDoc.validation_report?.has_blocking_failures ? (
-                          <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold flex items-center justify-center space-x-2">
-                            <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold flex items-center justify-center space-x-2">
+                            <XCircle className="w-4 h-4 text-rose-700 shrink-0" />
                             <span>Posting Gate Blocked: Invariant violations must be resolved prior to posting.</span>
                           </div>
                         ) : selectedDoc.proposal?.requires_human_review ? (
@@ -1101,7 +1101,7 @@ export default function App() {
                             disabled={loading}
                             className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.99]"
                           >
-                            <CheckCircle2 className="w-4 h-4 text-white" />
+                            <CheckCircle2 className="w-4 h-4 text-slate-900" />
                             <span>{loading ? 'Posting...' : 'Approve & Post to General Ledger'}</span>
                           </button>
                         )}
@@ -1120,24 +1120,24 @@ export default function App() {
 
         {/* TAB 3: GENERAL LEDGER */}
         {activeTab === 'ledger' && (
-          <div className="bg-[#111418] rounded-xl border border-slate-800/90 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#0E1116]">
+          <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-[#FAFBFC]">
               <div>
-                <h2 className="text-sm font-semibold text-white">General Ledger (Posted Double-Entry Journal)</h2>
-                <p className="text-xs text-slate-400">Immutable, audited double-entry records with document provenance.</p>
+                <h2 className="text-sm font-semibold text-slate-900">General Ledger (Posted Double-Entry Journal)</h2>
+                <p className="text-xs text-slate-500">Immutable, audited double-entry records with document provenance.</p>
               </div>
               <div className="flex items-center space-x-2">
                 <ExportButtons report="ledger" />
                 <button
                   onClick={() => window.open('/api/reports/export/tally', '_blank')}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-300 border border-slate-700 flex items-center space-x-1 cursor-pointer transition-colors"
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-blue-700 border border-slate-200 flex items-center space-x-1 cursor-pointer transition-colors"
                   title="Download Tally Prime import XML"
                 >
                   <Download className="w-3 h-3" />
                   <span>Tally XML</span>
                 </button>
-                <button onClick={fetchReports} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center space-x-1.5 border border-slate-700 cursor-pointer">
-                  <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
+                <button onClick={fetchReports} className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-lg flex items-center space-x-1.5 border border-slate-200 cursor-pointer">
+                  <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
                   <span>Refresh</span>
                 </button>
               </div>
@@ -1148,25 +1148,25 @@ export default function App() {
                 No posted journal entries yet. Process and approve invoices from Tab 1 to post to the ledger.
               </div>
             ) : (
-              <div className="divide-y divide-slate-800/80">
+              <div className="divide-y divide-slate-100">
                 {ledgerEntries.map((entry) => (
-                  <div key={entry.id} className="p-6 hover:bg-slate-800/30 transition-colors">
+                  <div key={entry.id} className="p-6 hover:bg-slate-50 transition-colors">
                     <div className="flex justify-between items-start mb-2.5">
                       <div>
-                        <span className="font-mono text-xs font-bold text-blue-300 bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 rounded-md">
+                        <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md">
                           Invoice #{entry.invoice_number}
                         </span>
-                        <span className="ml-3 text-xs text-slate-400 font-mono">Date: {entry.entry_date}</span>
+                        <span className="ml-3 text-xs text-slate-500 font-mono">Date: {entry.entry_date}</span>
                       </div>
-                      <span className="text-[11px] font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded border border-slate-800 font-semibold">
+                      <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2.5 py-1 rounded border border-slate-200 font-semibold">
                         {entry.transaction_type}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-300 italic mb-3.5 leading-relaxed">{entry.narration}</p>
+                    <p className="text-xs text-slate-700 italic mb-3.5 leading-relaxed">{entry.narration}</p>
 
-                    <div className="rounded-xl border border-slate-800 overflow-hidden bg-[#0D1014]">
+                    <div className="rounded-xl border border-slate-200 overflow-hidden bg-[#F7F8FA]">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-900/90 text-slate-300 font-semibold border-b border-slate-800 text-[11px]">
+                        <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 text-[11px]">
                           <tr>
                             <th className="py-2.5 px-3.5">Account</th>
                             <th className="py-2.5 px-2">Code</th>
@@ -1174,15 +1174,15 @@ export default function App() {
                             <th className="py-2.5 px-3.5 text-right">Credit (₹)</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800/50 font-mono">
+                        <tbody className="divide-y divide-slate-100 font-mono">
                           {entry.lines.map((l, idx) => (
-                            <tr key={idx} className="hover:bg-slate-800/20">
-                              <td className="py-2.5 px-3.5 text-slate-200 font-sans font-semibold">{l.account_name}</td>
-                              <td className="py-2.5 px-2 text-slate-400 font-bold">{l.account_code}</td>
-                              <td className="py-2.5 px-3 text-right font-bold text-blue-400">
+                            <tr key={idx} className="hover:bg-slate-100/20">
+                              <td className="py-2.5 px-3.5 text-slate-800 font-sans font-semibold">{l.account_name}</td>
+                              <td className="py-2.5 px-2 text-slate-500 font-bold">{l.account_code}</td>
+                              <td className="py-2.5 px-3 text-right font-bold text-blue-700">
                                 {l.entry_type === 'DEBIT' ? l.amount.toFixed(2) : '—'}
                               </td>
-                              <td className="py-2.5 px-3.5 text-right font-bold text-emerald-400">
+                              <td className="py-2.5 px-3.5 text-right font-bold text-emerald-700">
                                 {l.entry_type === 'CREDIT' ? l.amount.toFixed(2) : '—'}
                               </td>
                             </tr>
@@ -1199,11 +1199,11 @@ export default function App() {
 
         {/* TAB 4: TRIAL BALANCE */}
         {activeTab === 'trial-balance' && (
-          <div className="bg-[#111418] rounded-xl border border-slate-800/90 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-[#0E1116]">
+          <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-[#FAFBFC]">
               <div>
-                <h2 className="text-sm font-semibold text-white">Authoritative Trial Balance</h2>
-                <p className="text-xs text-slate-400">
+                <h2 className="text-sm font-semibold text-slate-900">Authoritative Trial Balance</h2>
+                <p className="text-xs text-slate-500">
                   Dynamically aggregated from posted double-entry journal lines as of {trialBalance?.as_of_date || 'Today'}.
                 </p>
               </div>
@@ -1211,13 +1211,13 @@ export default function App() {
               <div className="flex items-center space-x-2">
                 <ExportButtons report="trial-balance" />
                 {trialBalance?.is_balanced ? (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center space-x-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
                     <span>Trial Balance Balanced</span>
                   </span>
                 ) : (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center space-x-1.5">
-                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center space-x-1.5">
+                    <AlertTriangle className="w-4 h-4 text-rose-700" />
                     <span>Imbalance Detected</span>
                   </span>
                 )}
@@ -1231,7 +1231,7 @@ export default function App() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#0D1014] text-slate-300 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
+                  <thead className="bg-[#F7F8FA] text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
                     <tr>
                       <th className="py-3 px-5">Account Code</th>
                       <th className="py-3 px-5">Account Name</th>
@@ -1240,26 +1240,26 @@ export default function App() {
                       <th className="py-3 px-5 text-right">Credit Balance (₹)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/50 font-mono">
+                  <tbody className="divide-y divide-slate-100 font-mono">
                     {trialBalance.rows.map((row) => (
-                      <tr key={row.account_code} className="hover:bg-slate-800/30">
-                        <td className="py-2.5 px-5 text-slate-400 font-bold">{row.account_code}</td>
-                        <td className="py-2.5 px-5 font-sans font-semibold text-slate-200">{row.account_name}</td>
-                        <td className="py-2.5 px-4 font-sans text-slate-400 font-medium">{row.category}</td>
-                        <td className="py-2.5 px-4 text-right font-bold text-blue-400">
+                      <tr key={row.account_code} className="hover:bg-slate-50">
+                        <td className="py-2.5 px-5 text-slate-500 font-bold">{row.account_code}</td>
+                        <td className="py-2.5 px-5 font-sans font-semibold text-slate-800">{row.account_name}</td>
+                        <td className="py-2.5 px-4 font-sans text-slate-500 font-medium">{row.category}</td>
+                        <td className="py-2.5 px-4 text-right font-bold text-blue-700">
                           {row.balance_type === 'DEBIT' ? row.closing_balance.toFixed(2) : '—'}
                         </td>
-                        <td className="py-2.5 px-5 text-right font-bold text-emerald-400">
+                        <td className="py-2.5 px-5 text-right font-bold text-emerald-700">
                           {row.balance_type === 'CREDIT' ? row.closing_balance.toFixed(2) : '—'}
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-[#0A0C0F] font-bold border-t-2 border-slate-800 font-mono text-xs sm:text-sm">
+                  <tfoot className="bg-[#F5F6F8] font-bold border-t-2 border-slate-200 font-mono text-xs sm:text-sm">
                     <tr>
-                      <td colSpan="3" className="py-3 px-5 font-sans text-white font-semibold">Total Balance Equality</td>
-                      <td className="py-3 px-4 text-right text-blue-300 font-semibold">₹{trialBalance.total_debit_balance.toFixed(2)}</td>
-                      <td className="py-3 px-5 text-right text-emerald-300 font-semibold">₹{trialBalance.total_credit_balance.toFixed(2)}</td>
+                      <td colSpan="3" className="py-3 px-5 font-sans text-slate-900 font-semibold">Total Balance Equality</td>
+                      <td className="py-3 px-4 text-right text-blue-700 font-semibold">₹{trialBalance.total_debit_balance.toFixed(2)}</td>
+                      <td className="py-3 px-5 text-right text-emerald-700 font-semibold">₹{trialBalance.total_credit_balance.toFixed(2)}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -1273,11 +1273,11 @@ export default function App() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             
             {/* Profit & Loss Statement */}
-            <div className="bg-[#111418] rounded-xl border border-slate-800/90 flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-slate-800 bg-[#0E1116] flex justify-between items-center">
-                <h3 className="font-semibold text-sm text-white">Statement of Profit & Loss</h3>
+            <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-slate-200 bg-[#FAFBFC] flex justify-between items-center">
+                <h3 className="font-semibold text-sm text-slate-900">Statement of Profit & Loss</h3>
                 <div className="flex items-center space-x-3">
-                  <span className="text-xs text-slate-400 font-mono">Period ending {profitAndLoss?.as_of_date || 'Current'}</span>
+                  <span className="text-xs text-slate-500 font-mono">Period ending {profitAndLoss?.as_of_date || 'Current'}</span>
                   <ExportButtons report="profit-and-loss" />
                 </div>
               </div>
@@ -1286,45 +1286,45 @@ export default function App() {
                 <div className="p-5 space-y-5 text-xs flex-1 flex flex-col justify-between">
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-bold text-slate-400 mb-2 uppercase text-[11px] tracking-wider">Operating Revenue</h4>
+                      <h4 className="font-bold text-slate-500 mb-2 uppercase text-[11px] tracking-wider">Operating Revenue</h4>
                       {profitAndLoss.revenues.length === 0 ? (
                         <p className="text-slate-500 italic text-[11px]">No revenue transactions recorded this period.</p>
                       ) : (
                         profitAndLoss.revenues.map((r, i) => (
-                          <div key={i} className="flex justify-between py-1.5 border-b border-slate-800/60 font-mono">
-                            <span className="font-sans text-slate-300 font-semibold">{r.name}</span>
-                            <span className="text-slate-200">₹{r.amount.toFixed(2)}</span>
+                          <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 font-mono">
+                            <span className="font-sans text-slate-700 font-semibold">{r.name}</span>
+                            <span className="text-slate-800">₹{r.amount.toFixed(2)}</span>
                           </div>
                         ))
                       )}
-                      <div className="flex justify-between pt-2.5 font-bold font-mono text-white text-xs">
+                      <div className="flex justify-between pt-2.5 font-bold font-mono text-slate-900 text-xs">
                         <span>Total Revenue (A):</span>
-                        <span className="text-emerald-400 font-semibold">₹{profitAndLoss.total_revenue.toFixed(2)}</span>
+                        <span className="text-emerald-700 font-semibold">₹{profitAndLoss.total_revenue.toFixed(2)}</span>
                       </div>
                     </div>
 
                     <div className="pt-2">
-                      <h4 className="font-bold text-slate-400 mb-2 uppercase text-[11px] tracking-wider">Operating Expenses</h4>
+                      <h4 className="font-bold text-slate-500 mb-2 uppercase text-[11px] tracking-wider">Operating Expenses</h4>
                       {profitAndLoss.expenses.length === 0 ? (
                         <p className="text-slate-500 italic text-[11px]">No expense transactions recorded this period.</p>
                       ) : (
                         profitAndLoss.expenses.map((e, i) => (
-                          <div key={i} className="flex justify-between py-1.5 border-b border-slate-800/60 font-mono">
-                            <span className="font-sans text-slate-300 font-semibold">{e.name}</span>
-                            <span className="text-slate-200">₹{e.amount.toFixed(2)}</span>
+                          <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 font-mono">
+                            <span className="font-sans text-slate-700 font-semibold">{e.name}</span>
+                            <span className="text-slate-800">₹{e.amount.toFixed(2)}</span>
                           </div>
                         ))
                       )}
-                      <div className="flex justify-between pt-2.5 font-bold font-mono text-white text-xs">
+                      <div className="flex justify-between pt-2.5 font-bold font-mono text-slate-900 text-xs">
                         <span>Total Expenses (B):</span>
-                        <span className="text-rose-400 font-semibold">₹{profitAndLoss.total_expenses.toFixed(2)}</span>
+                        <span className="text-rose-700 font-semibold">₹{profitAndLoss.total_expenses.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-3.5 bg-[#0D1014] border border-slate-800 rounded-xl flex justify-between items-center font-bold text-sm">
-                    <span className="text-white">Net Operating Profit / (Loss):</span>
-                    <span className={profitAndLoss.net_profit >= 0 ? 'text-emerald-400 font-mono font-semibold' : 'text-rose-400 font-mono font-semibold'}>
+                  <div className="p-3.5 bg-[#F7F8FA] border border-slate-200 rounded-xl flex justify-between items-center font-bold text-sm">
+                    <span className="text-slate-900">Net Operating Profit / (Loss):</span>
+                    <span className={profitAndLoss.net_profit >= 0 ? 'text-emerald-700 font-mono font-semibold' : 'text-rose-700 font-mono font-semibold'}>
                       ₹{profitAndLoss.net_profit.toFixed(2)}
                     </span>
                   </div>
@@ -1335,11 +1335,11 @@ export default function App() {
             </div>
 
             {/* Balance Sheet */}
-            <div className="bg-[#111418] rounded-xl border border-slate-800/90 flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-slate-800 bg-[#0E1116] flex justify-between items-center">
-                <h3 className="font-semibold text-sm text-white">Balance Sheet</h3>
+            <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-slate-200 bg-[#FAFBFC] flex justify-between items-center">
+                <h3 className="font-semibold text-sm text-slate-900">Balance Sheet</h3>
                 <div className="flex items-center space-x-3">
-                  <span className="text-xs text-slate-400 font-mono">As of {balanceSheet?.as_of_date || 'Current'}</span>
+                  <span className="text-xs text-slate-500 font-mono">As of {balanceSheet?.as_of_date || 'Current'}</span>
                   <ExportButtons report="balance-sheet" />
                 </div>
               </div>
@@ -1348,32 +1348,32 @@ export default function App() {
                 <div className="p-5 space-y-5 text-xs flex-1 flex flex-col justify-between">
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-bold text-slate-400 mb-2 uppercase text-[11px] tracking-wider">Assets</h4>
+                      <h4 className="font-bold text-slate-500 mb-2 uppercase text-[11px] tracking-wider">Assets</h4>
                       {balanceSheet.assets.map((a, i) => (
-                        <div key={i} className="flex justify-between py-1.5 border-b border-slate-800/60 font-mono">
-                          <span className="font-sans text-slate-300 font-semibold">{a.name}</span>
-                          <span className="text-slate-200">₹{a.amount.toFixed(2)}</span>
+                        <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 font-mono">
+                          <span className="font-sans text-slate-700 font-semibold">{a.name}</span>
+                          <span className="text-slate-800">₹{a.amount.toFixed(2)}</span>
                         </div>
                       ))}
-                      <div className="flex justify-between pt-2.5 font-bold font-mono text-blue-400 text-xs">
+                      <div className="flex justify-between pt-2.5 font-bold font-mono text-blue-700 text-xs">
                         <span>Total Assets:</span>
                         <span className="font-semibold">₹{balanceSheet.total_assets.toFixed(2)}</span>
                       </div>
                     </div>
 
                     <div className="pt-2">
-                      <h4 className="font-bold text-slate-400 mb-2 uppercase text-[11px] tracking-wider">Liabilities & Equity</h4>
+                      <h4 className="font-bold text-slate-500 mb-2 uppercase text-[11px] tracking-wider">Liabilities & Equity</h4>
                       {balanceSheet.liabilities.map((l, i) => (
-                        <div key={i} className="flex justify-between py-1.5 border-b border-slate-800/60 font-mono">
-                          <span className="font-sans text-slate-300 font-semibold">{l.name}</span>
-                          <span className="text-slate-200">₹{l.amount.toFixed(2)}</span>
+                        <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 font-mono">
+                          <span className="font-sans text-slate-700 font-semibold">{l.name}</span>
+                          <span className="text-slate-800">₹{l.amount.toFixed(2)}</span>
                         </div>
                       ))}
-                      <div className="flex justify-between py-1.5 border-b border-slate-800/60 font-mono text-slate-400">
+                      <div className="flex justify-between py-1.5 border-b border-slate-200 font-mono text-slate-500">
                         <span className="font-sans">Retained Earnings (from P&L)</span>
                         <span>₹{balanceSheet.retained_earnings.toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between pt-2.5 font-bold font-mono text-emerald-400 text-xs">
+                      <div className="flex justify-between pt-2.5 font-bold font-mono text-emerald-700 text-xs">
                         <span>Total Liabilities & Equity:</span>
                         <span className="font-semibold">₹{balanceSheet.total_liabilities_and_equity.toFixed(2)}</span>
                       </div>
@@ -1382,12 +1382,12 @@ export default function App() {
 
                   <div className={`p-3.5 rounded-xl flex justify-between items-center font-bold text-xs sm:text-sm border ${
                     balanceSheet.is_balanced 
-                      ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' 
-                      : 'bg-rose-500/10 text-rose-300 border-rose-500/30'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                      : 'bg-rose-50 text-rose-700 border-rose-200'
                   }`}>
                     <span>Balance Sheet Equation:</span>
                     <span className="flex items-center space-x-1.5 font-mono">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-700" />
                       <span>Assets == Liab + Equity (Balanced)</span>
                     </span>
                   </div>
@@ -1401,10 +1401,10 @@ export default function App() {
 
         {/* TAB 6: AUDIT TRAIL */}
         {activeTab === 'audit' && (
-          <div className="bg-[#111418] rounded-xl border border-slate-800/90 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-800 bg-[#0E1116]">
-              <h2 className="text-sm font-semibold text-white">Immutable System Audit Trail</h2>
-              <p className="text-xs text-slate-400">Every invoice upload, extraction, and ledger posting recorded with provenance.</p>
+          <div className="bg-[#FFFFFF] rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 bg-[#FAFBFC]">
+              <h2 className="text-sm font-semibold text-slate-900">Immutable System Audit Trail</h2>
+              <p className="text-xs text-slate-500">Every invoice upload, extraction, and ledger posting recorded with provenance.</p>
             </div>
 
             {auditLogs.length === 0 ? (
@@ -1414,7 +1414,7 @@ export default function App() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#0D1014] text-slate-300 font-semibold border-b border-slate-800 uppercase tracking-wider text-[11px]">
+                  <thead className="bg-[#F7F8FA] text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
                     <tr>
                       <th className="py-3 px-5">Timestamp (UTC)</th>
                       <th className="py-3 px-4">Action</th>
@@ -1423,14 +1423,14 @@ export default function App() {
                       <th className="py-3 px-5">Audit Details</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/50 font-mono">
+                  <tbody className="divide-y divide-slate-100 font-mono">
                     {auditLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-800/30">
-                        <td className="py-2.5 px-5 text-slate-400 text-[11px]">{log.timestamp}</td>
-                        <td className="py-2.5 px-4 font-bold text-blue-400">{log.action}</td>
-                        <td className="py-2.5 px-4 text-slate-300 font-sans font-semibold">{log.entity_name}</td>
-                        <td className="py-2.5 px-4 font-sans text-slate-400">{log.performed_by}</td>
-                        <td className="py-2.5 px-5 font-sans text-slate-200">{log.details}</td>
+                      <tr key={log.id} className="hover:bg-slate-50">
+                        <td className="py-2.5 px-5 text-slate-500 text-[11px]">{log.timestamp}</td>
+                        <td className="py-2.5 px-4 font-bold text-blue-700">{log.action}</td>
+                        <td className="py-2.5 px-4 text-slate-700 font-sans font-semibold">{log.entity_name}</td>
+                        <td className="py-2.5 px-4 font-sans text-slate-500">{log.performed_by}</td>
+                        <td className="py-2.5 px-5 font-sans text-slate-800">{log.details}</td>
                       </tr>
                     ))}
                   </tbody>
