@@ -187,3 +187,31 @@ def test_invoice_arithmetic_heuristics_catches_errors():
     assert len(warnings) >= 2
     assert any("Line item 1 ('Faulty Widget'): Math mismatch" in w for w in warnings)
     assert any("Grand total discrepancy" in w for w in warnings)
+
+
+def test_separately_stated_discount_is_not_a_subtotal_discrepancy():
+    """Subtotal is gross; line totals are net of discount. 4000 - 500 == 3500 is correct."""
+    invoice = ExtractedInvoice(
+        invoice_number="INV-DISC-001",
+        invoice_date=date(2026, 10, 20),
+        vendor_name="Delhi Paper & Print Hub",
+        vendor_gstin="07DDDDD3333D1Z9",
+        subtotal=Decimal("4000.00"),
+        total_tax=Decimal("420.00"),
+        total_discount=Decimal("500.00"),
+        grand_total=Decimal("3920.00"),
+        line_items=[
+            InvoiceLineItem(
+                description="A4 Printing Paper (Cartons)",
+                hsn_sac="4802",
+                quantity=Decimal("10"),
+                unit_price=Decimal("400.00"),
+                discount_amount=Decimal("500.00"),
+                total_amount=Decimal("3500.00"),
+            )
+        ],
+    )
+
+    is_valid, warnings = validate_invoice_arithmetic(invoice)
+
+    assert is_valid, warnings

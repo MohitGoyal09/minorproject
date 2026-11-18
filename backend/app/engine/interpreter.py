@@ -76,7 +76,20 @@ class AccountingInterpreter:
             hsn_prefixes=["9401", "9403"],
             is_durable_asset=True
         ),
-        # 2. Capital IT & Computer Equipment
+        # 2. Cloud & Software Subscriptions (checked before capital equipment:
+        # a recurring service is never a fixed asset, and SAC 9983/9984 is the
+        # authoritative signal for it)
+        ItemClassificationRule(
+            name="Cloud & Software Expense",
+            category="SOFTWARE",
+            account_code="5020",
+            account_name="Server, Cloud & Software Expense",
+            account_category=AccountCategory.EXPENSE,
+            keywords=["cloud", "hosting", "aws", "azure", "gcp", "saas", "software license", "subscription", "domain", "api"],
+            hsn_prefixes=["9983", "9984"],
+            is_durable_asset=False
+        ),
+        # 3. Capital IT & Computer Equipment
         ItemClassificationRule(
             name="IT Equipment Capital",
             category="IT_CAPITAL",
@@ -87,7 +100,7 @@ class AccountingInterpreter:
             hsn_prefixes=["8471"],
             is_durable_asset=True
         ),
-        # 3. Computer Accessories & Peripherals (Low-Value Equipment)
+        # 4. Computer Accessories & Peripherals (Low-Value Equipment)
         ItemClassificationRule(
             name="Computer Accessories & Peripherals",
             category="PERIPHERALS",
@@ -98,7 +111,7 @@ class AccountingInterpreter:
             hsn_prefixes=["8544", "8471", "8504"],
             is_durable_asset=False
         ),
-        # 4. Office Supplies & Consumables
+        # 5. Office Supplies & Consumables
         ItemClassificationRule(
             name="Office Supplies & Stationery",
             category="SUPPLIES",
@@ -109,7 +122,7 @@ class AccountingInterpreter:
             hsn_prefixes=["4802", "4820", "9608"],
             is_durable_asset=False
         ),
-        # 5. Freight, Shipping & Delivery Charges
+        # 6. Freight, Shipping & Delivery Charges
         ItemClassificationRule(
             name="Freight & Shipping",
             category="FREIGHT",
@@ -118,17 +131,6 @@ class AccountingInterpreter:
             account_category=AccountCategory.EXPENSE,
             keywords=["freight", "handling", "shipping", "delivery", "cartage", "transport", "courier", "consignment"],
             hsn_prefixes=["9965", "9968"],
-            is_durable_asset=False
-        ),
-        # 6. Cloud, Hosting & Software Subscriptions
-        ItemClassificationRule(
-            name="Cloud & Software Expense",
-            category="SOFTWARE",
-            account_code="5020",
-            account_name="Server, Cloud & Software Expense",
-            account_category=AccountCategory.EXPENSE,
-            keywords=["cloud", "hosting", "aws", "azure", "gcp", "saas", "software license", "subscription", "domain", "api"],
-            hsn_prefixes=["9983", "9984"],
             is_durable_asset=False
         ),
         # 7. Rent & Premises

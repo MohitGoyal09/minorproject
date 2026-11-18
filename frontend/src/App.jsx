@@ -280,7 +280,7 @@ export default function App() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 font-medium">
-                Dual AI Extraction (Rana & Yao) • Indian GST & AS 10 Rules • Immutable Ledger
+                Dual-Path Extraction (Digital + OCR) • Indian GST & AS 10 Rules • Immutable Ledger
               </p>
             </div>
           </div>

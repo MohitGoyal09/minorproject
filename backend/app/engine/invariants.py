@@ -58,10 +58,20 @@ def validate_invoice_arithmetic(invoice: ExtractedInvoice, tolerance: Decimal = 
             )
 
     # 2. Subtotal check
+    # The invoice subtotal is normally gross of discount while line totals are
+    # net. Accept the gross subtotal, the net-of-discount subtotal, or the grand
+    # total, so a separately stated discount is not reported as a discrepancy.
     sum_lines = sum((item.total_amount for item in invoice.line_items), Decimal("0.00"))
-    if abs(sum_lines - invoice.subtotal) > tolerance:
+    candidates = (
+        invoice.subtotal,
+        invoice.subtotal - invoice.total_discount,
+        invoice.grand_total,
+    )
+    if all(abs(sum_lines - candidate) > tolerance for candidate in candidates):
         warnings.append(
-            f"Subtotal discrepancy: Sum of line items ({sum_lines}) != invoice subtotal ({invoice.subtotal})"
+            f"Subtotal discrepancy: Sum of line items ({sum_lines}) does not reconcile to "
+            f"subtotal ({invoice.subtotal}), subtotal less discount "
+            f"({invoice.subtotal - invoice.total_discount}), or grand total ({invoice.grand_total})"
         )
 
     # 3. Grand total check
@@ -187,18 +197,20 @@ def validate_invoice_reconciliation(invoice: ExtractedInvoice, tolerance: Decima
     # 3. Sum of line items vs Subtotal
     if invoice.line_items:
         sum_lines = sum((item.total_amount for item in invoice.line_items), start=Decimal("0.00")).quantize(Decimal("0.01"))
-        # Line totals might be taxable or tax-inclusive; compare against subtotal or grand_total
+        # Line totals are net of discount while the subtotal is usually gross.
+        # Compare against the gross subtotal, the net subtotal, and the grand total.
         diff_subtotal = abs(sum_lines - invoice.subtotal)
+        diff_net = abs(sum_lines - (invoice.subtotal - invoice.total_discount))
         diff_grand = abs(sum_lines - invoice.grand_total)
 
-        if diff_subtotal > tolerance and diff_grand > tolerance:
+        if diff_subtotal > tolerance and diff_net > tolerance and diff_grand > tolerance:
             results.append(ValidationCheckResult(
                 check_name="Subtotal Reconciliation",
                 status=ValidationCheckStatus.FAIL,
-                expected_value=str(invoice.subtotal),
+                expected_value=f"{invoice.subtotal} (or {invoice.subtotal - invoice.total_discount} net of discount)",
                 actual_value=str(sum_lines),
                 difference=str(diff_subtotal),
-                explanation=f"Sum of line items ({sum_lines}) does not match extracted taxable subtotal ({invoice.subtotal}).",
+                explanation=f"Sum of line items ({sum_lines}) does not reconcile to the taxable subtotal ({invoice.subtotal}), the subtotal less discount ({invoice.subtotal - invoice.total_discount}), or the grand total ({invoice.grand_total}).",
                 source_fields=["line_items", "subtotal"],
                 requires_human_review=True
             ))

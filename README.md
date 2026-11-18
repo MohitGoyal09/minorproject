@@ -49,8 +49,20 @@ start, so no migration step is needed.
 cd backend && python -m pytest -q
 ```
 
-63 tests cover extraction, table correction, OCR routing, invariants, ledger
-posting, corrections, and exports.
+75 tests cover extraction, table correction, OCR routing, invariants, ledger
+posting, corrections, exports, and the ground-truth evaluation.
+
+## Evaluation
+
+```bash
+cd backend && PYTHONPATH=. python -m app.eval.report           # print the table
+cd backend && PYTHONPATH=. python -m app.eval.report --write ../docs/EVALUATION.md
+```
+
+The pipeline is scored against `data/ground_truth/` on header fields, totals,
+line items, and every journal line. Current result: **100% check accuracy,
+4/4 invoices exact**, including a scanned copy through the OCR path. The report
+also states what the four synthetic samples cannot prove.
 
 ## API
 

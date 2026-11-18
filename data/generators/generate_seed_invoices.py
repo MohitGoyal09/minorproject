@@ -133,7 +133,7 @@ def generate_seed_data():
             "invoice_date": "2026-10-18",
             "due_date": "2026-10-28",
             "vendor_name": "CloudGrid Technologies India",
-            "vendor_gstin": "27CCCCCC2222C1Z8",
+            "vendor_gstin": "27CCCCC2222C1Z8",
             "vendor_address": "BKC, Mumbai, Maharashtra",
             "buyer_name": "Modern Tech Solutions Pvt Ltd",
             "buyer_gstin": "07BBBBB1111B1Z2",
