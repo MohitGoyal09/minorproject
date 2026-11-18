@@ -11,7 +11,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        // Override with VITE_PROXY_TARGET when the API is not on the default port:
+        //   VITE_PROXY_TARGET=http://127.0.0.1:8011 npm run dev
+        target: process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:8000',
         changeOrigin: true,
       }
     }

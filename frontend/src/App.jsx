@@ -8,6 +8,10 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 
+// Empty in development so Vite proxies /api to the local backend.
+// Set VITE_API_BASE_URL to the deployed backend origin on Vercel.
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || '';
+
 function EditInput({ value, onChange, type = 'text', align = 'left' }) {
   const alignment = align === 'right' ? 'text-right' : 'text-left';
   return (

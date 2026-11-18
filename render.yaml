@@ -1,0 +1,16 @@
+# Render blueprint: the FastAPI backend (Vercel cannot host it).
+# Dashboard: New > Blueprint > point at this repo.
+services:
+  - type: web
+    name: invoice-accounting-api
+    runtime: python
+    plan: starter          # 2 GB RAM; RapidOCR + ONNX Runtime need more than 512 MB
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.4"
+      - key: DATABASE_URL
+        sync: false        # paste a Postgres URL (Neon/Supabase); SQLite is wiped on redeploy

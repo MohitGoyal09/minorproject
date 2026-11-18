@@ -43,6 +43,22 @@ cd frontend && npm run dev
 Windows: `./run_system.ps1` starts both. The SQLite database is created on first
 start, so no migration step is needed.
 
+If port 8000 is already taken, start the API elsewhere and point the dev proxy at
+it:
+
+```bash
+PYTHONPATH=backend python -m uvicorn app.main:app --port 8011 --reload
+cd frontend && VITE_PROXY_TARGET=http://127.0.0.1:8011 npm run dev
+```
+
+## Deployment
+
+Vercel hosts the React app; the FastAPI backend needs a container host because
+PyMuPDF and ONNX Runtime exceed serverless limits. `render.yaml` is a ready
+blueprint for the API, and `docs/DEPLOYMENT.md` has the step-by-step, including
+the `VITE_API_BASE_URL` variable and the Postgres requirement (SQLite on an
+ephemeral disk resets on every redeploy).
+
 ## Tests
 
 ```bash
