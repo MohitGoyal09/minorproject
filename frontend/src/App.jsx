@@ -143,6 +143,7 @@ export default function App() {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [loading, setLoading] = useState(false);
   const [processingDocId, setProcessingDocId] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(null);
   const [filterStatus, setFilterStatus] = useState('ALL');
   
   // Reports state
@@ -220,24 +221,50 @@ export default function App() {
     }
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
+  const handleFileUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = ''; // allow re-selecting the same file
+    if (files.length === 0) return;
 
     setLoading(true);
-    try {
-      const res = await axios.post('/api/documents/upload', formData);
-      setActionMessage({ type: 'success', text: `Uploaded ${file.name} successfully.` });
-      await fetchDocuments();
-      await handleProcessDocument(res.data.document_id);
-    } catch (err) {
-      setActionMessage({ type: 'error', text: 'Upload failed: ' + (err.response?.data?.detail || err.message) });
-    } finally {
-      setLoading(false);
+    setUploadProgress({ done: 0, total: files.length });
+    const failed = [];
+    let lastDocId = null;
+
+    // Sequential on purpose: OCR is memory-hungry and SQLite writes are serial.
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const upload = await axios.post('/api/documents/upload', formData);
+        await axios.post(`/api/documents/${upload.data.document_id}/process`);
+        lastDocId = upload.data.document_id;
+      } catch (err) {
+        failed.push(`${file.name}: ${err.response?.data?.detail || err.message}`);
+      } finally {
+        setUploadProgress((current) =>
+          current ? { done: current.done + 1, total: current.total } : null
+        );
+      }
     }
+
+    await fetchDocuments();
+    const succeeded = files.length - failed.length;
+    if (failed.length === 0) {
+      setActionMessage({
+        type: 'success',
+        text: succeeded === 1 ? `Processed ${files[0].name}` : `Processed ${succeeded} invoices`,
+      });
+    } else {
+      setActionMessage({
+        type: 'error',
+        text: `${succeeded} of ${files.length} processed. Failed: ${failed.join(' | ')}`,
+      });
+    }
+
+    if (lastDocId) await handleSelectDocument(lastDocId);
+    setUploadProgress(null);
+    setLoading(false);
   };
 
   const handleProcessDocument = async (docId) => {
@@ -536,21 +563,37 @@ export default function App() {
 
             {/* Upload Area */}
             <div className="bg-[#FFFFFF] p-6 sm:p-8 rounded-xl border-2 border-dashed border-slate-200 hover:border-blue-500/60 transition-colors text-center">
-              <div className="w-11 h-11 rounded-lg bg-[#161A20] border border-[#252B33] flex items-center justify-center text-slate-500 mx-auto mb-3">
+              <div className="w-11 h-11 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 mx-auto mb-3">
                 <Upload className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-semibold text-slate-900">Upload an invoice PDF</h3>
+              <h3 className="text-base font-semibold text-slate-900">Upload invoice PDFs</h3>
               <p className="text-xs text-slate-500 max-w-lg mx-auto mt-1.5 mb-5 leading-relaxed">
                 Digital PDFs are read from their text layer. Scans and photographs go through OCR and are marked for review before posting.
               </p>
               
               <div className="flex flex-wrap items-center justify-center gap-3">
-                <label className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg cursor-pointer transition-colors active:scale-[0.99]">
+                <label className={`inline-flex items-center px-4 py-2 text-xs font-semibold rounded-lg transition-colors ${
+                  uploadProgress ? 'bg-blue-400 text-white cursor-wait' : 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer active:scale-[0.99]'
+                }`}>
                   <Upload className="w-4 h-4 mr-2" />
-                  <span>Select PDF</span>
-                  <input type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" />
+                  <span>
+                    {uploadProgress
+                      ? `Processing ${uploadProgress.done} of ${uploadProgress.total}...`
+                      : 'Select PDFs'}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    multiple
+                    disabled={!!uploadProgress}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
                 </label>
               </div>
+              <p className="text-[11px] text-slate-400 mt-3">
+                Select one or several PDFs at once. Each is extracted and validated in turn.
+              </p>
             </div>
 
             {/* Invoices List */}
