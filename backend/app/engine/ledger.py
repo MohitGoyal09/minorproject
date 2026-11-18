@@ -46,6 +46,7 @@ def find_duplicate_entry(
     tenant_id: str,
     invoice_number: str,
     invoice: Optional[ExtractedInvoice] = None,
+    exclude_document_id: Optional[str] = None,
 ) -> Optional[JournalEntry]:
     """A duplicate is the same supplier issuing the same invoice number again.
 
@@ -63,6 +64,8 @@ def find_duplicate_entry(
         .all()
     )
     for entry in posted:
+        if exclude_document_id and entry.document_id == exclude_document_id:
+            continue  # a posted document is not its own duplicate
         if normalise_invoice_number(entry.invoice_number) != target:
             continue
         if invoice is None or entry.document is None or entry.document.invoice is None:

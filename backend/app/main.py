@@ -224,10 +224,12 @@ def _persist_invoice(db: Session, doc: Document, tenant: Tenant, extracted: Extr
     return db_invoice
 
 
-def _is_duplicate(db: Session, tenant: Tenant, extracted: ExtractedInvoice) -> bool:
+def _is_duplicate(db: Session, tenant: Tenant, extracted: ExtractedInvoice, document_id: str) -> bool:
     from app.engine.ledger import find_duplicate_entry
 
-    return find_duplicate_entry(db, tenant.id, extracted.invoice_number, extracted) is not None
+    return find_duplicate_entry(
+        db, tenant.id, extracted.invoice_number, extracted, exclude_document_id=document_id
+    ) is not None
 
 
 def _proposal_and_validation(db: Session, tenant: Tenant, extracted: ExtractedInvoice, document_id: str):
@@ -261,7 +263,7 @@ def _proposal_and_validation(db: Session, tenant: Tenant, extracted: ExtractedIn
         invoice=extracted,
         entry=proposal,
         active_account_codes=active_codes,
-        is_duplicate=_is_duplicate(db, tenant, extracted),
+        is_duplicate=_is_duplicate(db, tenant, extracted, document_id),
     )
     proposal.validation_report = report
     return proposal, report

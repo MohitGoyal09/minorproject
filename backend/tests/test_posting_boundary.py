@@ -192,3 +192,14 @@ def test_a_different_supplier_may_reuse_the_invoice_number(client):
     response = client.post("/api/journal/post", json={"document_id": second, "approve_with_warnings": True})
 
     assert response.status_code == 200, response.text
+
+
+def test_a_posted_document_is_not_reported_as_its_own_duplicate(client):
+    document_id, _ = upload_and_process(client)
+    assert client.post("/api/journal/post", json={"document_id": document_id}).status_code == 200
+
+    detail = client.get(f"/api/documents/{document_id}").json()
+
+    duplicate_checks = [c for c in detail["validation_report"]["checks"] if c["check_name"] == "Duplicate Invoice Posting Gate"]
+    assert duplicate_checks == []
+    assert detail["validation_report"]["has_blocking_failures"] is False
